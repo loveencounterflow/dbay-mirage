@@ -1,0 +1,41 @@
+{
+  "name": "dbay-mirage",
+  "version": "1.0.1",
+  "description": "DBay plugin to mirror, parse and process text files (HTML, CSV, ...) in SQL",
+  "main": "lib/main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/loveencounterflow/dbay-mirage.git"
+  },
+  "keywords": [
+    "dbay",
+    "mirage",
+    "mirror",
+    "SQL",
+    "SQLite",
+    "text",
+    "HTML",
+    "CSV"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/loveencounterflow/dbay-mirage/issues"
+  },
+  "homepage": "https://github.com/loveencounterflow/dbay-mirage#readme",
+  "dependencies": {
+    "cnd": "^9.2.2",
+    "guy": "^3.1.0",
+    "intertext": "^8.0.0",
+    "intertype": "^7.7.0"
+  },
+  "devDependencies": {
+    "dbay": "^10.121.1"
+  },
+  "peerDependencies": {
+    "dbay": "^10.121.1"
+  }
+}
