@@ -49,6 +49,11 @@ types.declare 'mrg_walk_line_rows_cfg', tests:
   "@isa.nonempty_text x.dsk":           ( x ) -> @isa.nonempty_text x.dsk
 
 #-----------------------------------------------------------------------------------------------------------
+types.declare 'mrg_walk_par_rows_cfg', tests:
+  "@isa.object x":                      ( x ) -> @isa.object x
+  "@isa.nonempty_text x.dsk":           ( x ) -> @isa.nonempty_text x.dsk
+
+#-----------------------------------------------------------------------------------------------------------
 types.declare 'mrg_set_active_cfg', tests:
   "@isa.object x":                      ( x ) -> @isa.object x
   "@isa.nonempty_text x.dsk":           ( x ) -> @isa.nonempty_text x.dsk
@@ -81,6 +86,9 @@ class @Mrg
       mrg_walk_line_rows_cfg:
         dsk:              null
       #.....................................................................................................
+      mrg_walk_par_rows_cfg:
+        dsk:              null
+      #.....................................................................................................
       mrg_set_active_cfg:
         dsk:              null
         lnr:              null
@@ -104,13 +112,25 @@ class @Mrg
 
   #---------------------------------------------------------------------------------------------------------
   _set_variables: ->
-    @db.setv 'allow_change_on_mirror', 0
+
+  #---------------------------------------------------------------------------------------------------------
+  _create_sql_functions: ->
+    { prefix } = @cfg
+    #-------------------------------------------------------------------------------------------------------
+    @db.create_function
+      name:           prefix + '_re_is_blank'
+      deterministic:  true
+      varargs:        false
+      call:           ( txt ) -> if ( /^\s*$/.test txt ) then 1 else 0
+    #-------------------------------------------------------------------------------------------------------
+    return null
 
   #---------------------------------------------------------------------------------------------------------
   _procure_infrastructure: ->
     ### TAINT skip if tables found ###
     { prefix } = @cfg
     @db SQL"""
+      drop view   if exists #{prefix}_paragraph_linenumbers;
       drop view   if exists #{prefix}_lines;
       drop view   if exists #{prefix}_location_from_dsk_locid;
       drop view   if exists #{prefix}_prv_nxt_xtra_from_dsk_locid;
@@ -125,17 +145,72 @@ class @Mrg
           dsk     text not null,
           path    text not null,
           digest  text default null,
-        primary key ( dsk ) );
-      -- ...................................................................................................
+        primary key ( dsk ) );"""
+    #.......................................................................................................
+    ### TAINT need to indicate column nr for fine-grained source locations ###
+    @db SQL"""
       create table #{prefix}_mirror (
           dsk     text    not null,           -- data source key
           lnr     integer not null,           -- line nr (1-based)
           trk     integer not null default 1, -- track number
           pce     integer not null default 1, -- piece number
           act     boolean not null default 1, -- true: active, false: deleted
-          txt    text    not null,
+          blk     boolean not null generated always as ( #{prefix}_re_is_blank( txt ) ) virtual,
+          txt     text    not null,
         foreign key ( dsk ) references #{prefix}_datasources,
         primary key ( dsk, lnr, trk, pce ) );"""
+    #.......................................................................................................
+    @db SQL"""
+      -- thx to https://github.com/loveencounterflow/gaps-and-islands#the-gaps-and-islands-pattern
+      create view #{prefix}_paragraph_linenumbers as with t as ( select
+          dsk                                 as dsk,
+          lnr - ( dense_rank() over w ) + 1   as par,
+          lnr                                 as lnr
+        from #{prefix}_mirror
+        where not blk
+        window w as (
+          partition by dsk
+          order by lnr ) )
+      select
+          dsk         as dsk,
+          par         as par,
+          min( lnr )  as lnr1,
+          max( lnr )  as lnr2
+        from   t
+        group by par
+        order by lnr1;"""
+    #.......................................................................................................
+    @db SQL"""
+      create view #{prefix}_parmirror as select
+          dsk                                                   as dsk,
+          lnr                                                   as lnr,
+          trk                                                   as trk,
+          pce                                                   as pce,
+          act                                                   as act,
+          -- blk                                                   as blk,
+          ( select
+                p.par as par
+              from #{prefix}_paragraph_linenumbers as p
+              where m.lnr between p.lnr1 and p.lnr2 limit 1 )   as par,
+          txt                                                   as txt
+        from #{prefix}_mirror as m
+        -- where not blk
+        order by dsk, lnr, trk, pce;"""
+      # #.......................................................................................................
+    # @db SQL"""
+    #   create table #{prefix}_refs (
+    #       dsk     text    not null,           -- data source key
+    #       lnr     integer not null,           -- line nr (1-based)
+    #       trk     integer not null default 1, -- track number
+    #       pce     integer not null default 1, -- piece number
+
+    #       sdsk     text    not null,           -- data source key
+    #       slnr     integer not null,           -- line nr (1-based)
+    #       strk     integer not null default 1, -- track number
+    #       spce     integer not null default 1, -- piece number
+
+    #     foreign key ( dsk ) references #{prefix}_datasources,
+    #     primary key ( dsk, lnr, trk, pce ) );"""
     #-------------------------------------------------------------------------------------------------------
     # VIEWS
     #.......................................................................................................
@@ -173,13 +248,32 @@ class @Mrg
       create view #{prefix}_lines as select distinct
           r1.dsk                                              as dsk,
           r1.lnr                                              as lnr,
+          r1.par                                              as par,
           coalesce( group_concat( r1.txt, '' ) over w, '' )   as txt
-        from #{prefix}_mirror as r1
+        from #{prefix}_parmirror as r1
         where true
           and ( r1.dsk = std_getv( 'dsk' ) )
           and ( r1.act )
         window w as (
           partition by r1.lnr
+          order by r1.lnr, r1.trk, r1.pce
+          range between unbounded preceding and unbounded following );"""
+    #.......................................................................................................
+    @db SQL"""
+      -- needs variables 'dsk'
+      create view #{prefix}_pars as select distinct
+          r1.dsk                                                as dsk,
+          r2.lnr1                                               as lnr1,
+          r2.lnr2                                               as lnr2,
+          r1.par                                                as par,
+          coalesce( group_concat( r1.txt, '\n' ) over w, '' )   as txt
+        from #{prefix}_parmirror as r1
+        join #{prefix}_paragraph_linenumbers as r2 using ( dsk, par )
+        where true
+          and ( r1.dsk = std_getv( 'dsk' ) )
+          and ( r1.act )
+        window w as (
+          partition by r1.par
           order by r1.lnr, r1.trk, r1.pce
           range between unbounded preceding and unbounded following );"""
     #-------------------------------------------------------------------------------------------------------
@@ -327,6 +421,14 @@ class @Mrg
     { prefix    } = @cfg
     @db.setv 'dsk',       dsk
     return @db SQL"select * from #{prefix}_lines;"
+
+  #---------------------------------------------------------------------------------------------------------
+  walk_par_rows: ( cfg ) ->
+    validate.mrg_walk_par_rows_cfg ( cfg = { @constructor.C.defaults.mrg_walk_par_rows_cfg..., cfg..., } )
+    { dsk       } = cfg
+    { prefix    } = @cfg
+    @db.setv 'dsk',       dsk
+    return @db SQL"select * from #{prefix}_pars;"
 
   #---------------------------------------------------------------------------------------------------------
   activate:   ( cfg ) -> @_set_active { cfg..., act: true, }
