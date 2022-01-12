@@ -30,7 +30,8 @@
     "cnd": "^9.2.2",
     "guy": "^3.1.0",
     "intertext": "^8.0.0",
-    "intertype": "^7.7.0"
+    "intertype": "^7.7.0",
+    "paragate": "^2.1.0"
   },
   "devDependencies": {
     "dbay": "^10.121.1"
