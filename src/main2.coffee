@@ -167,7 +167,9 @@ class @Mrg
           lnr - ( dense_rank() over w ) + 1   as par,
           lnr                                 as lnr
         from #{prefix}_mirror
-        where not blk
+        where true
+          and ( not blk )
+          and ( trk = 1 )
         window w as (
           partition by dsk
           order by lnr ) )
