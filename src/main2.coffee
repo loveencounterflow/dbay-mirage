@@ -57,7 +57,7 @@ types.declare 'mrg_walk_par_rows_cfg', tests:
 types.declare 'mrg_set_active_cfg', tests:
   "@isa.object x":                      ( x ) -> @isa.object x
   "@isa.nonempty_text x.dsk":           ( x ) -> @isa.nonempty_text x.dsk
-  "@isa_optional.integer x.lnr":        ( x ) -> @isa_optional.integer x.lnr
+  "@isa_optional.integer x.oln":        ( x ) -> @isa_optional.integer x.oln
   "@isa_optional.integer x.trk":        ( x ) -> @isa_optional.integer x.trk
   "@isa_optional.integer x.pce":        ( x ) -> @isa_optional.integer x.pce
 
@@ -91,7 +91,7 @@ class @Mrg
       #.....................................................................................................
       mrg_set_active_cfg:
         dsk:              null
-        lnr:              null
+        oln:              null
         trk:              null
         pce:              null
 
@@ -130,7 +130,9 @@ class @Mrg
     ### TAINT skip if tables found ###
     { prefix } = @cfg
     @db SQL"""
-      drop view   if exists #{prefix}_paragraph_linenumbers;
+      drop view   if exists #{prefix}_rwnmirror;
+      drop view   if exists #{prefix}_parlnrs0;
+      drop view   if exists #{prefix}_parlnrs;
       drop view   if exists #{prefix}_lines;
       drop view   if exists #{prefix}_location_from_dsk_locid;
       drop view   if exists #{prefix}_prv_nxt_xtra_from_dsk_locid;
@@ -150,89 +152,97 @@ class @Mrg
     ### TAINT need to indicate column nr for fine-grained source locations ###
     @db SQL"""
       create table #{prefix}_mirror (
-          dsk     text    not null,           -- data source key
-          lnr     integer not null,           -- line nr (1-based)
-          trk     integer not null default 1, -- track number
-          pce     integer not null default 1, -- piece number
-          act     boolean not null default 1, -- true: active, false: deleted
-          blk     boolean not null generated always as ( #{prefix}_re_is_blank( txt ) ) virtual,
+          dsk     text    not null,                         -- data source key
+          oln     integer not null,                         -- original line nr (1-based)
+          trk     integer not null default 1,               -- track number
+          pce     integer not null default 1,               -- piece number
+          act     boolean not null default 1,               -- true: active, false: deleted
+          mat     boolean not null generated always as (
+            not #{prefix}_re_is_blank( txt ) ) virtual,     -- material, i.e. non-blank
           txt     text    not null,
         foreign key ( dsk ) references #{prefix}_datasources,
-        primary key ( dsk, lnr, trk, pce ) );"""
+        primary key ( dsk, oln, trk, pce ) );"""
+    #.......................................................................................................
+    @db SQL"""
+      -- same as `mrg_mirror`, but with row numbers *for active rows*
+      create view #{prefix}_rwnmirror as select
+          row_number() over w as rwn,
+          *
+        from #{prefix}_mirror
+        where act
+        window w as ( order by dsk, oln, trk, pce )
+        order by dsk, oln, trk, pce;"""
     #.......................................................................................................
     @db SQL"""
       -- thx to https://github.com/loveencounterflow/gaps-and-islands#the-gaps-and-islands-pattern
-      create view #{prefix}_paragraph_linenumbers as with t as ( select
-          dsk                                 as dsk,
-          lnr - ( dense_rank() over w ) + 1   as par,
-          lnr                                 as lnr
-        from #{prefix}_mirror
-        where true
-          and ( not blk )
-          and ( trk = 1 )
-        window w as (
-          partition by dsk
-          order by lnr ) )
-      select
+      create view #{prefix}_parlnrs0 as select
+          rwn - ( dense_rank() over w ) + 1 as par,
+          *
+        from #{prefix}_rwnmirror
+        where act and mat
+        window w as ( partition by dsk order by rwn )
+        order by rwn;"""
+    #.......................................................................................................
+    @db SQL"""
+      create view #{prefix}_parlnrs as select
           dsk         as dsk,
           par         as par,
-          min( lnr )  as lnr1,
-          max( lnr )  as lnr2
-        from   t
+          min( rwn )  as rwn1,
+          max( rwn )  as rwn2
+        from #{prefix}_parlnrs0
         group by par
-        order by lnr1;"""
+        order by rwn1;"""
     #.......................................................................................................
     @db SQL"""
       create view #{prefix}_parmirror as select
           dsk                                                   as dsk,
-          lnr                                                   as lnr,
+          oln                                                   as oln,
           trk                                                   as trk,
           pce                                                   as pce,
           act                                                   as act,
-          -- blk                                                   as blk,
+          mat                                                   as mat,
           ( select
                 p.par as par
-              from #{prefix}_paragraph_linenumbers as p
-              where m.lnr between p.lnr1 and p.lnr2 limit 1 )   as par,
+              from #{prefix}_parlnrs as p
+              where m.rwn between p.rwn1 and p.rwn2 limit 1 )   as par,
           txt                                                   as txt
-        from #{prefix}_mirror as m
-        -- where not blk
-        order by dsk, lnr, trk, pce;"""
-    #.......................................................................................................
-    @db SQL"""
-      -- needs variables 'dsk'
-      create view #{prefix}_lines as select distinct
-          r1.dsk                                              as dsk,
-          r1.lnr                                              as lnr,
-          r1.par                                              as par,
-          coalesce( group_concat( r1.txt, '' ) over w, '' )   as txt
-        from #{prefix}_parmirror as r1
-        where true
-          and ( r1.dsk = std_getv( 'dsk' ) )
-          and ( r1.act )
-        window w as (
-          partition by r1.lnr
-          order by r1.lnr, r1.trk, r1.pce
-          range between unbounded preceding and unbounded following );"""
-    #.......................................................................................................
-    @db SQL"""
-      -- needs variables 'dsk'
-      create view #{prefix}_pars as select distinct
-          r1.dsk                                                as dsk,
-          r2.lnr1                                               as lnr1,
-          r2.lnr2                                               as lnr2,
-          r1.par                                                as par,
-          coalesce( group_concat( r1.txt, char( 10 ) ) over w, '' )   as txt
-        from #{prefix}_parmirror as r1
-        join #{prefix}_paragraph_linenumbers as r2 using ( dsk, par )
-        where true
-          and ( r1.dsk = std_getv( 'dsk' ) )
-          and ( r1.act )
-        window w as (
-          partition by r1.par
-          order by r1.lnr, r1.trk, r1.pce
-          range between unbounded preceding and unbounded following );"""
-    #-------------------------------------------------------------------------------------------------------
+        from #{prefix}_rwnmirror as m
+        order by rwn;"""
+    # #.......................................................................................................
+    # @db SQL"""
+    #   -- needs variables 'dsk'
+    #   create view #{prefix}_lines as select distinct
+    #       r1.dsk                                              as dsk,
+    #       r1.oln                                              as oln,
+    #       r1.par                                              as par,
+    #       coalesce( group_concat( r1.txt, '' ) over w, '' )   as txt
+    #     from #{prefix}_parmirror as r1
+    #     where true
+    #       and ( r1.dsk = std_getv( 'dsk' ) )
+    #       and ( r1.act )
+    #     window w as (
+    #       partition by r1.oln
+    #       order by r1.oln, r1.trk, r1.pce
+    #       range between unbounded preceding and unbounded following );"""
+    # #.......................................................................................................
+    # @db SQL"""
+    #   -- needs variables 'dsk'
+    #   create view #{prefix}_pars as select distinct
+    #       r1.dsk                                                                    as dsk,
+    #       r2.oln1                                                                   as oln1,
+    #       r2.oln2                                                                   as oln2,
+    #       r1.par                                                                    as par,
+    #       coalesce( group_concat( r1.txt, char( 10 ) ) over w, '' ) || char( 10 )   as txt
+    #     from #{prefix}_parmirror as r1
+    #     join #{prefix}_parlnrs as r2 using ( dsk, par )
+    #     where true
+    #       and ( r1.dsk = std_getv( 'dsk' ) )
+    #       and ( r1.act )
+    #     window w as (
+    #       partition by r1.par
+    #       order by r1.oln, r1.trk, r1.pce
+    #       range between unbounded preceding and unbounded following );"""
+    # #-------------------------------------------------------------------------------------------------------
     # TRIGGERS
     #.......................................................................................................
     @db SQL"""
@@ -281,27 +291,27 @@ class @Mrg
       #.....................................................................................................
       insert_line: @db.create_insert {
         into:       prefix + '_mirror',
-        fields:     [ 'dsk', 'lnr', 'txt', ], }
+        fields:     [ 'dsk', 'oln', 'txt', ], }
       #.....................................................................................................
       insert_lnpart: @db.create_insert {
         into:       prefix + '_mirror',
-        fields:     [ 'dsk', 'lnr', 'trk', 'pce', 'txt', ], }
+        fields:     [ 'dsk', 'oln', 'trk', 'pce', 'txt', ], }
       #.....................................................................................................
       insert_xtra: @db.create_insert {
         into:       prefix + '_mirror',
-        fields:     [ 'dsk', 'lnr', 'pce', 'xtra', 'txt', ],
+        fields:     [ 'dsk', 'oln', 'pce', 'xtra', 'txt', ],
         returning:  '*', }
       #.....................................................................................................
       insert_xtra_using_dsk_locid: SQL"""
         -- needs variables 'dsk', 'locid'
         -- unfortunately, got to repeat the `std_assert()` call here
-        insert into #{prefix}_mirror ( dsk, lnr, pce, xtra, txt )
+        insert into #{prefix}_mirror ( dsk, oln, pce, xtra, txt )
           select
               $dsk                                                    as dsk,
               std_assert(
-                lnr,
+                oln,
                 '^insert_xtra_using_dsk_locid@546^' ||
-                ' unknown locid ' || quote( std_getv( 'locid' ) ) )   as lnr,
+                ' unknown locid ' || quote( std_getv( 'locid' ) ) )   as oln,
               pce                                                     as pce,
               nxt_xtra                                                as nxt_xtra,
               $txt                                                    as txt
@@ -310,7 +320,7 @@ class @Mrg
       #.....................................................................................................
       insert_locid: @db.create_insert {
         into:       prefix + '_locs',
-        fields:     [ 'dsk', 'lnr', 'pce', 'props', 'del', ], }
+        fields:     [ 'dsk', 'oln', 'pce', 'props', 'del', ], }
     #.......................................................................................................
     return null
 
@@ -349,13 +359,13 @@ class @Mrg
       @db =>
         @_delete_lines dsk
         insert_line   = @db.prepare @sql.insert_line
-        lnr           = 0
+        oln           = 0
         #...................................................................................................
         for line from GUY.fs.walk_lines path, { decode: false, }
-          lnr++
+          oln++
           counts.bytes   += line.length
           txt             = line.toString 'utf-8'
-          insert_line.run { dsk, lnr, txt, }
+          insert_line.run { dsk, oln, txt, }
         #...................................................................................................
         counts.files++
         @_update_digest dsk, current_digest
@@ -394,18 +404,17 @@ class @Mrg
   _set_active: ( cfg ) ->
     validate.mrg_set_active_cfg ( cfg = { @constructor.C.defaults.mrg_set_active_cfg..., cfg..., } )
     { dsk
-      lnr
+      oln
       trk
       pce
       act } = cfg
     act     = if act then 1 else 0
     sql     = SQL"update mrg_mirror set act = $act where ( dsk = $dsk )"
-    sql    += SQL" and ( lnr = $lnr )" if lnr?
+    sql    += SQL" and ( oln = $oln )" if oln?
     sql    += SQL" and ( trk = $trk )" if trk?
     sql    += SQL" and ( pce = $pce )" if pce?
     sql    += SQL";"
-    debug '^33490^', rpr sql
-    ( @db.prepare sql ).run { dsk, lnr, trk, pce, act, }
+    ( @db.prepare sql ).run { dsk, oln, trk, pce, act, }
     return null
 
   #=========================================================================================================
