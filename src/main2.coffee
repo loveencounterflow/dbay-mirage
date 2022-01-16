@@ -151,6 +151,8 @@ class @Mrg
     #.......................................................................................................
     ### TAINT need to indicate column nr for fine-grained source locations ###
     @db SQL"""
+      -- * mirrors actual file contents and records computed changes
+      -- * is format-agnostic
       create table #{prefix}_mirror (
           dsk     text    not null,                         -- data source key
           oln     integer not null,                         -- original line nr (1-based)
@@ -164,7 +166,7 @@ class @Mrg
         primary key ( dsk, oln, trk, pce ) );"""
     #.......................................................................................................
     @db SQL"""
-      -- same as `mrg_mirror`, but with row numbers *for active rows*
+      -- Same as `mrg_mirror`, but with row numbers *for active rows*
       create view #{prefix}_rwnmirror as select
           row_number() over w as rwn,
           *
@@ -174,7 +176,9 @@ class @Mrg
         order by dsk, oln, trk, pce;"""
     #.......................................................................................................
     @db SQL"""
-      -- thx to https://github.com/loveencounterflow/gaps-and-islands#the-gaps-and-islands-pattern
+      -- Same as `mrg_rwnmirror` but only active, material lines (i.e. no lines that are deactivated
+      -- and/or blank), with PARagraph numbers added (for the technique ised here see [Gaps &
+      -- Islands](https://github.com/loveencounterflow/gaps-and-islands#the-gaps-and-islands-pattern).
       create view #{prefix}_parlnrs0 as select
           rwn - ( dense_rank() over w ) + 1 as par,
           *
@@ -184,6 +188,7 @@ class @Mrg
         order by rwn;"""
     #.......................................................................................................
     @db SQL"""
+      -- First (`rwn1`) and last (`rwn2`) RoW Number of each (WS-delimited) `par`agraph.
       create view #{prefix}_parlnrs as select
           dsk         as dsk,
           par         as par,
@@ -194,6 +199,7 @@ class @Mrg
         order by rwn1;"""
     #.......................................................................................................
     @db SQL"""
+      -- Same as `mrg_mirror` but with PARagraph numbers added.
       create view #{prefix}_parmirror as select
           dsk                                                   as dsk,
           oln                                                   as oln,
