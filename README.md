@@ -1,20 +1,24 @@
+
+# 𓆤DBay 𓁛Mirage
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [dbay-mirage](#dbay-mirage)
+- [𓆤DBay 𓁛Mirage](#%F0%93%86%A4dbay-%F0%93%81%9Bmirage)
   - [To Do](#to-do)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# dbay-mirage
+# 𓆤DBay 𓁛Mirage
 
 
 DBay plugin to mirror, parse and process text files (HTML, CSV, ...) in SQL
 
+This module has been pulled from [a preliminary version in
+`dbay-rustybuzz`](https://github.com/loveencounterflow/dbay-rustybuzz)
 
-
-
+🚧 Work in progress 🚧
 
 ## To Do
 
