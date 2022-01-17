@@ -116,12 +116,20 @@ class @Html
       varargs:        false
       deterministic:  true
       start:          null
-      step:           ( Σ, sgl, tag, k, v ) ->
-        Σ            ?= { sgl, tag, atrs: {}, }
+      step:           ( Σ, typ, tag, k, v, txt ) ->
+        Σ            ?= { typ, tag, atrs: {}, txt, }
         Σ.atrs[ k ]   = v if k?
         return Σ
       inverse:        ( Σ, dropped ) -> return null unless Σ?; delete Σ.atrs[ k ]; Σ
-      result:         ( Σ ) -> return '' unless Σ?; HDML.create_tag Σ.sgl, Σ.tag, Σ.atrs
+      result:         ( Σ ) ->
+        return '' unless Σ?
+        return switch Σ.typ
+          when 't' then HDML.escape_text Σ.txt
+          when 'c' then "<!-- #{HDML.escape_text Σ.txt} -->"
+          when 'e' then ( HDML.create_tag '<', 'error', Σ.atrs  ) + \
+                        ( HDML.escape_text Σ.txt                ) + \
+                        ( HDML.create_tag '>', 'error'          )
+          else HDML.create_tag Σ.typ, Σ.tag, Σ.atrs
     #-------------------------------------------------------------------------------------------------------
     return null
 
@@ -151,8 +159,8 @@ class @Html
       create table #{prefix}_html_mirror (
           dsk   text    not null,
           tid   integer not null,
-          sgl   text    not null,      -- sigil, one of `<`, `>`, `^`
-          tag   text    not null,      -- use '$text' for text nodes
+          typ   text    not null,   -- sigil, one of `<`, `>`, `^`, 't', 'c'
+          tag   text,               -- null for texts, comments
           atrid integer,
           text  text,
         primary key ( dsk, tid ),
@@ -162,15 +170,10 @@ class @Html
       create view #{prefix}_html_tags_and_html as select distinct
           t.dsk                                                               as dsk,
           t.tid                                                               as tid,
-          t.sgl                                                               as sgl,
+          t.typ                                                               as typ,
           t.tag                                                               as tag,
           t.atrid                                                             as atrid,
-          case t.tag
-            when '$text'    then t.text
-            when '$comment' then t.text
-            -- when '$comment' then '<!-- ' || t.text || '-->'
-            else #{prefix}_html_create_tag( t.sgl, t.tag, a.k, a.v ) over w
-            end                                                               as xxx
+          #{prefix}_html_create_tag( t.typ, t.tag, a.k, a.v, t.text ) over w  as xxx
         from
           #{prefix}_html_mirror as t
           left join #{prefix}_html_atrs as a using ( atrid )
@@ -196,25 +199,22 @@ class @Html
       the VNR gets more realistic (dsk, linenr, ...) ###
       insert_content:    db.prepare SQL"""
         with v1 as ( select coalesce( max( tid ), 0 ) + 1 as tid from #{prefix}_html_mirror where dsk = $dsk )
-        insert into #{prefix}_html_mirror ( dsk, tid, sgl, tag, atrid, text )
-          values ( $dsk, ( select tid from v1 ), $sgl, $tag, $atrid, $text )
+        insert into #{prefix}_html_mirror ( dsk, tid, typ, tag, atrid, text )
+          values ( $dsk, ( select tid from v1 ), $typ, $tag, $atrid, $text )
           returning *;"""
       insert_atr:        db.prepare_insert { into: "#{prefix}_html_atrs",         returning: null, }
     #.......................................................................................................
     return null
 
   #---------------------------------------------------------------------------------------------------------
-  _append_tag: ( dsk, sgl, tag, atrs = null, text = null ) ->
+  _append_tag: ( dsk, typ, tag, atrs = null, text = null ) ->
     atrid = null
-    if text?
-      validate.null atrs
-    else if atrs?
-      validate.null text
+    if atrs?
       { atrid } = @mrg.db.first_row @statements.insert_atrid
       for k, v of atrs
         v = rpr v unless isa.text v
         @statements.insert_atr.run { atrid, k, v, }
-    return @mrg.db.first_row @statements.insert_content, { dsk, sgl, tag, atrid, text, }
+    return @mrg.db.first_row @statements.insert_content, { dsk, typ, tag, atrid, text, }
 
   #---------------------------------------------------------------------------------------------------------
   render_dsk: ( cfg ) ->
@@ -235,18 +235,21 @@ class @Html
       console.table tokens
       for d in tokens
         switch d.$key
-          when '^text'    then urge '^4564^', @_append_tag dsk, '^', '$text',     null, d.text
-          when '^comment' then urge '^4564^', @_append_tag dsk, '^', '$comment',  null, d.text
-          when '<tag'     then urge '^4564^', @_append_tag dsk, '<', d.name, d.atrs
-          when '>tag'     then urge '^4564^', @_append_tag dsk, '>', d.name, d.atrs
-          else
-            warn '^435345^', "unhandled token #{rpr d.$key}"
-      break
-    # H.tabulate "#{par} (#{lnr1}..#{lnr2}) #{rpr txt}", normalize_tokens HTMLISH.parse txt
-  # mrg.html._append_tag dsk, '<', 'div', { id: 'c1', class: 'foo bar', }
-  # mrg.html._append_tag dsk, '^', '$text', null, "helo"
-  # mrg.html._append_tag dsk, '>', 'div'
-  # mrg.html._append_tag dsk, '^', 'mrg:loc#baselines'
+          when '<tag'     then @_append_tag dsk, '<', d.name, d.atrs
+          when '>tag'     then @_append_tag dsk, '>', d.name, d.atrs
+          when '^text'    then @_append_tag dsk, 't', null, null, d.text
+          when '^comment'
+            @_append_tag dsk, 'c', null, null, d.text.replace /^<!--\s*(.*?)\s*-->$/, '$1'
+          when '^error'
+          # { '$key': '^error', start: 49, stop: 63, text: 'characters> < ', '$vnr': [ 1, 50 ], '$': '^ð1^',
+          # origin: 'htmlish', code: 'bareachrs', message: 'bare active characters' }
+            atrs = { start: d.start, stop: d.stop, code: d.code, }
+            # delete d.$key
+            # delete d.$vnr
+            # delete d.$
+            # delete d.origin
+            @_append_tag dsk, 'e', null, atrs, "#{d.message}: #{rpr d.text}"
+          else warn '^435345^', "unhandled token #{rpr d}"
     return null
 
 
