@@ -33,6 +33,12 @@ types.declare 'constructor_cfg', tests:
   "@isa.object x":                                    ( x ) -> @isa.object x
   "( @isa.object x.mrg ) or ( @isa.function x.mrg )": ( x ) -> ( @isa.object x.mrg ) or ( @isa.function x.mrg )
 
+#-----------------------------------------------------------------------------------------------------------
+types.declare 'mrg_parse_dsk_cfg', tests:
+  "@isa.object x":                                    ( x ) -> @isa.object x
+  "@isa.nonempty_text x.dsk":                         ( x ) -> @isa.nonempty_text x.dsk
+
+
 #===========================================================================================================
 class Htmlish
 
@@ -217,4 +223,33 @@ class @Html
     { prefix  } = @cfg
     db.setv 'dsk', dsk
     return ( db.all_first_values SQL"select xxx from #{prefix}_html_tags_and_html;" ).join ''
+
+  #---------------------------------------------------------------------------------------------------------
+  parse_dsk: ( cfg ) ->
+    validate.mrg_parse_dsk_cfg ( cfg = { @constructor.C.defaults.mrg_parse_dsk_cfg..., cfg..., } )
+    { dsk } = cfg
+    #.......................................................................................................
+    for { par, rwn1, rwn2, txt, } from @mrg.get_par_rows { dsk, }
+      debug '^5345651^', { par, rwn1, rwn2, txt, }
+      tokens = HTMLISH.parse txt
+      console.table tokens
+      for d in tokens
+        switch d.$key
+          when '^text'    then urge '^4564^', @_append_tag dsk, '^', '$text',     null, d.text
+          when '^comment' then urge '^4564^', @_append_tag dsk, '^', '$comment',  null, d.text
+          when '<tag'     then urge '^4564^', @_append_tag dsk, '<', d.name, d.atrs
+          when '>tag'     then urge '^4564^', @_append_tag dsk, '>', d.name, d.atrs
+          else
+            warn '^435345^', "unhandled token #{rpr d.$key}"
+      break
+    # H.tabulate "#{par} (#{lnr1}..#{lnr2}) #{rpr txt}", normalize_tokens HTMLISH.parse txt
+  # mrg.html._append_tag dsk, '<', 'div', { id: 'c1', class: 'foo bar', }
+  # mrg.html._append_tag dsk, '^', '$text', null, "helo"
+  # mrg.html._append_tag dsk, '>', 'div'
+  # mrg.html._append_tag dsk, '^', 'mrg:loc#baselines'
+    return null
+
+
+
+
 
