@@ -63,9 +63,21 @@ types.declare 'mrg_set_active_cfg', tests:
   "@isa_optional.integer x.pce":        ( x ) -> @isa_optional.integer x.pce
 
 #-----------------------------------------------------------------------------------------------------------
+types.declare 'mrg_register_dsk_cfg', tests:
+  "@isa.object x":                            ( x ) -> @isa.object x
+  "@isa_optional.mrg_fspath_for_url x.path":  ( x ) -> @isa_optional.mrg_fspath_for_url x.path
+  "@isa_optional.mrg_url_for_dsk x.url":      ( x ) -> @isa_optional.mrg_url_for_dsk x.url
+  "exactly 1 of x.path, x.url must be set":   ( x ) -> ( x.path? or x.url? ) and not ( x.path? and x.url? )
+
+#-----------------------------------------------------------------------------------------------------------
 types.declare 'mrg_fspath_for_url', tests:
-  "@isa.nonempty_text x": ( x ) -> @isa.nonempty_text x
+  "@isa.text x":          ( x ) -> @isa.text x
   "x.startsWith '/'":     ( x ) -> x.startsWith '/'
+
+#-----------------------------------------------------------------------------------------------------------
+types.declare 'mrg_url_for_dsk', tests:
+  "@isa.text x":                          ( x ) -> @isa.text x
+  "( /^(file:\/\/\/)|(live:)/ ).test x":  ( x ) -> ( /^(file:\/\/\/|live:)/ ).test x
 
 
 
@@ -94,6 +106,11 @@ class @Mrg
       #.....................................................................................................
       mrg_walk_par_rows_cfg:
         dsk:              null
+      #.....................................................................................................
+      mrg_register_dsk_cfg:
+        dsk:              null
+        path:             null
+        url:              null
       #.....................................................................................................
       mrg_set_active_cfg:
         dsk:              null
@@ -151,7 +168,8 @@ class @Mrg
     @db SQL"""
       create table #{prefix}_datasources (
           dsk     text not null,
-          path    text not null,
+          path    text,
+          url     text,
           digest  text default null,
         primary key ( dsk ) );"""
     #.......................................................................................................
@@ -298,7 +316,7 @@ class @Mrg
       #.....................................................................................................
       upsert_datasource: @db.create_insert {
         into:   prefix + '_datasources',
-        fields: [ 'dsk', 'path', ],
+        fields: [ 'dsk', 'path', 'url', ],
         on_conflict: { update: true, }, }
       #.....................................................................................................
       insert_line: @db.create_insert {
@@ -338,6 +356,10 @@ class @Mrg
 
   #---------------------------------------------------------------------------------------------------------
   register_dsk: ( cfg ) ->
+    validate.mrg_register_dsk_cfg cfg
+    if cfg.path?                              then  cfg.url   = @_url_from_path cfg.path
+    else if @types.isa.mrg_file_url cfg.url   then  cfg.path  = @_path_from_url cfg.url
+    else                                            cfg.path  = null
     @db @sql.upsert_datasource, cfg
     return null
 
@@ -355,7 +377,6 @@ class @Mrg
   _path_from_url: ( url  ) ->
     return URL.fileURLToPath url
 
-
   #---------------------------------------------------------------------------------------------------------
   refresh_datasource: ( cfg ) ->
     @db.setv 'allow_change_on_mirror', 1
@@ -372,7 +393,10 @@ class @Mrg
       force       } = cfg
     { prefix      } = @cfg
     { path
+      url
       digest      } = @_ds_entry_from_dsk dsk
+    unless path?
+      throw new Error "^Mirage/refresh_datasource@1^ unable to refresh datasource #{rpr dsk} (URL: #{rpr url})"
     current_digest  = GUY.fs.get_content_hash path
     counts          = { files: 0, bytes: 0, }
     #.......................................................................................................
