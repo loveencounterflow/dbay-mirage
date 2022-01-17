@@ -31,7 +31,7 @@ _HTMLISH                  = ( require 'paragate/lib/htmlish.grammar' ).new_gramm
 #===========================================================================================================
 types.declare 'constructor_cfg', tests:
   "@isa.object x":                                    ( x ) -> @isa.object x
-  "( @isa.object x.mrg ) or ( @isa.function x.mrg ":  ( x ) -> ( @isa.object x.mrg ) or ( @isa.function x.mrg )
+  "( @isa.object x.mrg ) or ( @isa.function x.mrg )": ( x ) -> ( @isa.object x.mrg ) or ( @isa.function x.mrg )
 
 #===========================================================================================================
 class Htmlish
