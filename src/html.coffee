@@ -89,8 +89,7 @@ class @Html
       drop view  if exists #{prefix}_html_tags_and_html;
       drop table if exists #{prefix}_html_atrs;
       drop table if exists #{prefix}_html_mirror;
-      drop table if exists #{prefix}_html_atrids;
-      drop table if exists #{prefix}_html_datasources;"""
+      drop table if exists #{prefix}_html_atrids;"""
     #-------------------------------------------------------------------------------------------------------
     db SQL"""
       create table #{prefix}_html_atrids (
@@ -112,14 +111,8 @@ class @Html
           atrid integer,
           text  text,
         primary key ( dsk, tid ),
-        foreign key ( dsk   ) references #{prefix}_html_datasources,
+        foreign key ( dsk   ) references #{prefix}_datasources,
         foreign key ( atrid ) references #{prefix}_html_atrids );"""
-    db SQL"""
-      create table #{prefix}_html_datasources (
-          dsk     text not null,
-          url     text not null,
-          digest  text default null,
-        primary key ( dsk ) );"""
     db SQL"""
       create view #{prefix}_html_tags_and_html as select distinct
           t.tid                                                     as tid,
@@ -157,7 +150,6 @@ class @Html
           values ( $dsk, ( select tid from v1 ), $sgl, $tag, $atrid, $text )
           returning *;"""
       insert_atr:        db.prepare_insert { into: "#{prefix}_html_atrs",         returning: null, }
-      insert_datasource: db.prepare_insert { into: "#{prefix}_html_datasources",  returning: '*', }
     #.......................................................................................................
     return null
 
