@@ -154,12 +154,17 @@ class @Html
         foreign key ( atrid ) references #{prefix}_html_atrids );"""
     db SQL"""
       create view #{prefix}_html_tags_and_html as select distinct
-          t.tid                                                     as tid,
-          t.sgl                                                     as sgl,
-          t.tag                                                     as tag,
-          t.atrid                                                   as atrid,
-          case t.tag when '$text' then t.text
-          else #{prefix}_html_create_tag( t.sgl, t.tag, a.k, a.v ) over w end  as xxx
+          t.dsk                                                               as dsk,
+          t.tid                                                               as tid,
+          t.sgl                                                               as sgl,
+          t.tag                                                               as tag,
+          t.atrid                                                             as atrid,
+          case t.tag
+            when '$text'    then t.text
+            when '$comment' then t.text
+            -- when '$comment' then '<!-- ' || t.text || '-->'
+            else #{prefix}_html_create_tag( t.sgl, t.tag, a.k, a.v ) over w
+            end                                                               as xxx
         from
           #{prefix}_html_mirror as t
           left join #{prefix}_html_atrs as a using ( atrid )
