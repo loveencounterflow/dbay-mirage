@@ -429,7 +429,7 @@ class @Mrg
     validate.mrg_walk_line_rows_cfg ( cfg = { @constructor.C.defaults.mrg_walk_line_rows_cfg..., cfg..., } )
     { dsk       } = cfg
     { prefix    } = @cfg
-    @db.setv 'dsk',       dsk
+    @db.setv 'dsk', dsk
     return @db SQL"select * from #{prefix}_lines;"
 
   #---------------------------------------------------------------------------------------------------------
@@ -437,7 +437,7 @@ class @Mrg
     validate.mrg_walk_par_rows_cfg ( cfg = { @constructor.C.defaults.mrg_walk_par_rows_cfg..., cfg..., } )
     { dsk       } = cfg
     { prefix    } = @cfg
-    @db.setv 'dsk',       dsk
+    @db.setv 'dsk', dsk
     return @db SQL"select * from #{prefix}_pars;"
 
   #---------------------------------------------------------------------------------------------------------
