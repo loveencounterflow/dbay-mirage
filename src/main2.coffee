@@ -23,6 +23,7 @@ types                     = new ( require 'intertype' ).Intertype()
 SQL                       = String.raw
 GUY                       = require 'guy'
 { HTMLISH: ITXH }         = require 'intertext'
+URL                       = require 'url'
 
 
 #===========================================================================================================
@@ -60,6 +61,11 @@ types.declare 'mrg_set_active_cfg', tests:
   "@isa_optional.integer x.oln":        ( x ) -> @isa_optional.integer x.oln
   "@isa_optional.integer x.trk":        ( x ) -> @isa_optional.integer x.trk
   "@isa_optional.integer x.pce":        ( x ) -> @isa_optional.integer x.pce
+
+#-----------------------------------------------------------------------------------------------------------
+types.declare 'mrg_fspath_for_url', tests:
+  "@isa.nonempty_text x": ( x ) -> @isa.nonempty_text x
+  "x.startsWith '/'":     ( x ) -> x.startsWith '/'
 
 
 
@@ -339,6 +345,16 @@ class @Mrg
   _ds_entry_from_dsk: ( dsk ) -> @db.single_row @sql.ds_entry_from_dsk, { dsk, }
   _update_digest: ( dsk, digest ) -> @db @sql.update_digest, { dsk, digest, }
   _delete_lines: ( dsk ) -> @db @sql.delete_lines, { dsk, }
+
+  #-----------------------------------------------------------------------------------------------------------
+  _url_from_path: ( path ) ->
+    validate.mrg_fspath_for_url path
+    return ( URL.pathToFileURL path ).href
+
+  #-----------------------------------------------------------------------------------------------------------
+  _path_from_url: ( url  ) ->
+    return URL.fileURLToPath url
+
 
   #---------------------------------------------------------------------------------------------------------
   refresh_datasource: ( cfg ) ->
