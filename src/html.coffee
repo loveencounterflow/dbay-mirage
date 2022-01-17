@@ -67,7 +67,7 @@ class @Html
     { prefix } = @cfg
     #-------------------------------------------------------------------------------------------------------
     @mrg.db.create_window_function
-      name:           "#{prefix}h_create_tag"
+      name:           "#{prefix}_html_create_tag"
       varargs:        false
       deterministic:  true
       start:          null
@@ -86,25 +86,25 @@ class @Html
     { prefix  } = @cfg
     { db      } = @mrg
     db SQL"""
-      drop view  if exists #{prefix}h_tags_and_html;
-      drop table if exists #{prefix}h_atrs;
-      drop table if exists #{prefix}h_mirror;
-      drop table if exists #{prefix}h_atrids;
-      drop table if exists #{prefix}h_datasources;"""
+      drop view  if exists #{prefix}_html_tags_and_html;
+      drop table if exists #{prefix}_html_atrs;
+      drop table if exists #{prefix}_html_mirror;
+      drop table if exists #{prefix}_html_atrids;
+      drop table if exists #{prefix}_html_datasources;"""
     #-------------------------------------------------------------------------------------------------------
     db SQL"""
-      create table #{prefix}h_atrids (
+      create table #{prefix}_html_atrids (
           atrid integer not null,
         primary key ( atrid ) );"""
     db SQL"""
-      create table #{prefix}h_atrs (
+      create table #{prefix}_html_atrs (
           atrid integer not null,
           k     text    not null,
           v     text    not null,
         primary key ( atrid, k ),
-        foreign key ( atrid ) references #{prefix}h_atrids );"""
+        foreign key ( atrid ) references #{prefix}_html_atrids );"""
     db SQL"""
-      create table #{prefix}h_mirror (
+      create table #{prefix}_html_mirror (
           dsk   text    not null,
           tid   integer not null,
           sgl   text    not null,      -- sigil, one of `<`, `>`, `^`
@@ -112,26 +112,25 @@ class @Html
           atrid integer,
           text  text,
         primary key ( dsk, tid ),
-        foreign key ( dsk   ) references #{prefix}h_datasources,
-        foreign key ( atrid ) references #{prefix}h_atrids );"""
+        foreign key ( dsk   ) references #{prefix}_html_datasources,
+        foreign key ( atrid ) references #{prefix}_html_atrids );"""
     db SQL"""
-      create table #{prefix}h_datasources (
+      create table #{prefix}_html_datasources (
           dsk     text not null,
           url     text not null,
           digest  text default null,
         primary key ( dsk ) );"""
-        # -- create table #{prefix}h_datasources (
     db SQL"""
-      create view #{prefix}h_tags_and_html as select distinct
+      create view #{prefix}_html_tags_and_html as select distinct
           t.tid                                                     as tid,
           t.sgl                                                     as sgl,
           t.tag                                                     as tag,
           t.atrid                                                   as atrid,
           case t.tag when '$text' then t.text
-          else #{prefix}h_create_tag( t.sgl, t.tag, a.k, a.v ) over w end  as xxx
+          else #{prefix}_html_create_tag( t.sgl, t.tag, a.k, a.v ) over w end  as xxx
         from
-          #{prefix}h_mirror as t
-          left join #{prefix}h_atrs as a using ( atrid )
+          #{prefix}_html_mirror as t
+          left join #{prefix}_html_atrs as a using ( atrid )
         where true
           and ( t.dsk = std_getv( 'dsk' ) )
         window w as (
@@ -149,16 +148,16 @@ class @Html
     #.......................................................................................................
     GUY.props.hide @, 'statements',
       insert_atrid:      db.prepare_insert {
-        into: "#{prefix}h_atrids", returning: '*', exclude: [ 'atrid', ], }
+        into: "#{prefix}_html_atrids", returning: '*', exclude: [ 'atrid', ], }
       ### NOTE we don't use `autoincrement` b/c this is the more general solution; details will change when
       the VNR gets more realistic (dsk, linenr, ...) ###
       insert_content:    db.prepare SQL"""
-        with v1 as ( select coalesce( max( tid ), 0 ) + 1 as tid from #{prefix}h_mirror where dsk = $dsk )
-        insert into #{prefix}h_mirror ( dsk, tid, sgl, tag, atrid, text )
+        with v1 as ( select coalesce( max( tid ), 0 ) + 1 as tid from #{prefix}_html_mirror where dsk = $dsk )
+        insert into #{prefix}_html_mirror ( dsk, tid, sgl, tag, atrid, text )
           values ( $dsk, ( select tid from v1 ), $sgl, $tag, $atrid, $text )
           returning *;"""
-      insert_atr:        db.prepare_insert { into: "#{prefix}h_atrs",         returning: null, }
-      insert_datasource: db.prepare_insert { into: "#{prefix}h_datasources",  returning: '*', }
+      insert_atr:        db.prepare_insert { into: "#{prefix}_html_atrs",         returning: null, }
+      insert_datasource: db.prepare_insert { into: "#{prefix}_html_datasources",  returning: '*', }
     #.......................................................................................................
     return null
 
@@ -182,5 +181,5 @@ class @Html
     { db      } = @mrg
     { prefix  } = @cfg
     db.setv 'dsk', dsk
-    return ( db.all_first_values SQL"select xxx from #{prefix}h_tags_and_html;" ).join ''
+    return ( db.all_first_values SQL"select xxx from #{prefix}_html_tags_and_html;" ).join ''
 
