@@ -208,8 +208,7 @@ class @Html
       for k, v of atrs
         v = rpr v unless isa.text v
         @statements.insert_atr.run { atrid, k, v, }
-    urge @mrg.db.first_row @statements.insert_content, { dsk, sgl, tag, atrid, text, }
-    return null
+    return @mrg.db.first_row @statements.insert_content, { dsk, sgl, tag, atrid, text, }
 
   #---------------------------------------------------------------------------------------------------------
   render_dsk: ( cfg ) ->
