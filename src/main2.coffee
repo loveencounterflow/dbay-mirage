@@ -371,13 +371,8 @@ class @Mrg
   _delete_lines: ( dsk ) -> @db @sql.delete_lines, { dsk, }
 
   #-----------------------------------------------------------------------------------------------------------
-  _url_from_path: ( path ) ->
-    validate.mrg_fspath_for_url path
-    return ( URL.pathToFileURL path ).href
-
-  #-----------------------------------------------------------------------------------------------------------
-  _path_from_url: ( url  ) ->
-    return URL.fileURLToPath url
+  _url_from_path: ( path ) -> ( URL.pathToFileURL path ).href
+  _path_from_url: ( url  ) -> URL.fileURLToPath url
 
   #---------------------------------------------------------------------------------------------------------
   refresh_datasource: ( cfg ) ->
