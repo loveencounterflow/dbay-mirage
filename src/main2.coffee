@@ -156,6 +156,7 @@ class @Mrg
       drop view   if exists #{prefix}_rwnmirror;
       drop view   if exists #{prefix}_parlnrs0;
       drop view   if exists #{prefix}_parlnrs;
+      drop view   if exists #{prefix}_pars;
       drop view   if exists #{prefix}_lines;
       drop view   if exists #{prefix}_location_from_dsk_locid;
       drop view   if exists #{prefix}_prv_nxt_xtra_from_dsk_locid;
@@ -243,6 +244,7 @@ class @Mrg
     #   -- needs variables 'dsk'
     #   create view #{prefix}_lines as select distinct
     #       r1.dsk                                              as dsk,
+    #       r1.rwn                                              as rwn,
     #       r1.oln                                              as oln,
     #       r1.par                                              as par,
     #       coalesce( group_concat( r1.txt, '' ) over w, '' )   as txt
@@ -254,24 +256,24 @@ class @Mrg
     #       partition by r1.oln
     #       order by r1.oln, r1.trk, r1.pce
     #       range between unbounded preceding and unbounded following );"""
-    # #.......................................................................................................
-    # @db SQL"""
-    #   -- needs variables 'dsk'
-    #   create view #{prefix}_pars as select distinct
-    #       r1.dsk                                                                    as dsk,
-    #       r2.oln1                                                                   as oln1,
-    #       r2.oln2                                                                   as oln2,
-    #       r1.par                                                                    as par,
-    #       coalesce( group_concat( r1.txt, char( 10 ) ) over w, '' ) || char( 10 )   as txt
-    #     from #{prefix}_parmirror as r1
-    #     join #{prefix}_parlnrs as r2 using ( dsk, par )
-    #     where true
-    #       and ( r1.dsk = std_getv( 'dsk' ) )
-    #       and ( r1.act )
-    #     window w as (
-    #       partition by r1.par
-    #       order by r1.oln, r1.trk, r1.pce
-    #       range between unbounded preceding and unbounded following );"""
+    #.......................................................................................................
+    @db SQL"""
+      -- needs variables 'dsk'
+      create view #{prefix}_pars as select distinct
+          r1.dsk                                                                    as dsk,
+          r2.rwn1                                                                   as rwn1,
+          r2.rwn2                                                                   as rwn2,
+          r1.par                                                                    as par,
+          coalesce( group_concat( r1.txt, char( 10 ) ) over w, '' ) || char( 10 )   as txt
+        from #{prefix}_parmirror as r1
+        join #{prefix}_parlnrs as r2 using ( dsk, par )
+        where true
+          and ( r1.dsk = std_getv( 'dsk' ) )
+          and ( r1.act )
+        window w as (
+          partition by r1.par
+          order by r1.oln, r1.trk, r1.pce
+          range between unbounded preceding and unbounded following );"""
     # #-------------------------------------------------------------------------------------------------------
     # TRIGGERS
     #.......................................................................................................
