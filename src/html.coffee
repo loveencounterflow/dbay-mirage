@@ -22,8 +22,10 @@ types                     = new ( require 'intertype' ).Intertype()
   validate_list_of }      = types.export()
 SQL                       = String.raw
 GUY                       = require 'guy'
-{ HTMLISH: ITXH }         = require 'intertext'
 { HDML }                  = require 'hdml'
+_HTMLISH                  = ( require 'paragate/lib/htmlish.grammar' ).new_grammar { bare: true, }
+{ lets
+  freeze }                = GUY.lft
 
 
 #===========================================================================================================
@@ -31,7 +33,44 @@ types.declare 'constructor_cfg', tests:
   "@isa.object x":                                    ( x ) -> @isa.object x
   "( @isa.object x.mrg ) or ( @isa.function x.mrg ":  ( x ) -> ( @isa.object x.mrg ) or ( @isa.function x.mrg )
 
+#===========================================================================================================
+class Htmlish
 
+  # #---------------------------------------------------------------------------------------------------------
+  # constructor: ->
+  #   return undefined
+
+  #---------------------------------------------------------------------------------------------------------
+  parse: ( text ) ->
+    tokens    = _HTMLISH.parse text
+    R         = lets tokens, ( tokens ) =>
+      for d, idx in tokens
+        # warn '^44564976^', d if d.$key is '^error'
+        if ( d.$key is '<tag' )
+          if ( d.type is 'otag' )
+            if ( /^<\s+/.test d.text )
+              @_as_error d, '^ð1^', 'xtraows', "extraneous whitespace before tag name"
+        else if ( d.$key is '>tag' )
+          if ( d.type is 'ctag' )
+            if( /^<\s*\/\s+/.test d.text ) or ( /^<\s+\/\s*/.test d.text )
+              @_as_error d, '^ð2^', 'xtracws', "extraneous whitespace in closing tag"
+        else if ( d.$key is '^text' )
+          if ( /(?<!\\)[<&]/.test d.text )
+            @_as_error d, '^ð1^', 'bareachrs', "bare active characters"
+      return null
+    return R
+
+  #---------------------------------------------------------------------------------------------------------
+  _as_error: ( token, ref, code, message ) ->
+    token.$key    = '^error'
+    token.origin  = 'htmlish'
+    token.code    = code
+    token.message = message
+    token.$       = ref
+    return null
+
+#-----------------------------------------------------------------------------------------------------------
+HTMLISH = new Htmlish()
 
 
 #===========================================================================================================
