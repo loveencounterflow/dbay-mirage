@@ -269,7 +269,11 @@ class @Html
           when '^error'
             atrs = { start: d.start, stop: d.stop, code: d.code, }
             @_append_tag dsk, 'e', null, atrs, "#{d.message}: #{rpr d.text}"
-          else warn '^435345^', "unhandled token #{rpr d}"
+          else
+            warn '^435345^', "unhandled token #{rpr d}"
+            atrs  = { start: d.start, stop: d.stop, code: 'unhandled', }
+            d     = { $key: d.$key, name: d.name, type: d.type, }
+            @_append_tag dsk, 'e', null, atrs, "unhandled token: #{rpr d}"
     return null
 
 
