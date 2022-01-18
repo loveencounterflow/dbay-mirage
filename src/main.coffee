@@ -152,6 +152,7 @@ class @Mrg
   _procure_infrastructure: ->
     ### TAINT skip if tables found ###
     { prefix } = @cfg
+    @db.set_foreign_keys_state false
     @db SQL"""
       drop view   if exists #{prefix}_rwnmirror;
       drop view   if exists #{prefix}_parlnrs0;
@@ -163,6 +164,7 @@ class @Mrg
       drop table  if exists #{prefix}_locs;
       drop table  if exists #{prefix}_mirror;
       drop table  if exists #{prefix}_datasources;"""
+    @db.set_foreign_keys_state true
     #-------------------------------------------------------------------------------------------------------
     # TABLES
     #.......................................................................................................

@@ -138,11 +138,13 @@ class @Html
     ### TAINT skip if tables found ###
     { prefix  } = @cfg
     { db      } = @mrg
+    db.set_foreign_keys_state false
     db SQL"""
       drop view  if exists #{prefix}_html_tags_and_html;
       drop table if exists #{prefix}_html_atrs;
       drop table if exists #{prefix}_html_mirror;
       drop table if exists #{prefix}_html_atrids;"""
+    db.set_foreign_keys_state true
     #-------------------------------------------------------------------------------------------------------
     db SQL"""
       create table #{prefix}_html_atrids (
