@@ -265,7 +265,7 @@ class @Html
           when '>tag'     then @_append_tag dsk, '>', d.name, d.atrs
           when '^text'    then @_append_tag dsk, 't', null, null, d.text
           when '^comment'
-            @_append_tag dsk, 'c', null, null, d.text.replace /^<!--\s*(.*?)\s*-->$/, '$1'
+            @_append_tag dsk, 'r', null, null, d.text.replace /^<!--\s*(.*?)\s*-->$/, '$1'
           when '^error'
           # { '$key': '^error', start: 49, stop: 63, text: 'characters> < ', '$vnr': [ 1, 50 ], '$': '^ð1^',
           # origin: 'htmlish', code: 'bareachrs', message: 'bare active characters' }
