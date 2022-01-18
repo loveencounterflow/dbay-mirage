@@ -188,7 +188,8 @@ class @Mrg
             not #{prefix}_re_is_blank( txt ) ) virtual,     -- material, i.e. non-blank
           txt     text    not null,
         foreign key ( dsk ) references #{prefix}_datasources,
-        primary key ( dsk, oln, trk, pce ) );"""
+        primary key ( dsk, oln, trk, pce )
+        check ( trk > 0 and floor( trk ) = trk ) );"""
     #.......................................................................................................
     @db SQL"""
       -- Same as `mrg_mirror`, but with row numbers *for active rows*
