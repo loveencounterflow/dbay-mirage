@@ -262,6 +262,7 @@ class @Html
         switch d.$key
           when '<tag'     then @_append_tag dsk, '<', d.name, d.atrs
           when '>tag'     then @_append_tag dsk, '>', d.name, d.atrs
+          when '^tag'     then @_append_tag dsk, '^', d.name, d.atrs
           when '^text'    then @_append_tag dsk, 't', null, null, d.text
           when '^comment'
             @_append_tag dsk, 'r', null, null, d.text.replace /^<!--\s*(.*?)\s*-->$/, '$1'
