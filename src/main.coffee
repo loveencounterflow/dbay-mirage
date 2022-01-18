@@ -161,6 +161,7 @@ class @Mrg
       drop view   if exists #{prefix}_lines;
       drop view   if exists #{prefix}_location_from_dsk_locid;
       drop view   if exists #{prefix}_prv_nxt_xtra_from_dsk_locid;
+      drop view   if exists #{prefix}_parmirror;
       drop table  if exists #{prefix}_locs;
       drop table  if exists #{prefix}_mirror;
       drop table  if exists #{prefix}_datasources;"""
