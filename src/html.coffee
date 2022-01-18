@@ -140,34 +140,58 @@ class @Html
     { db      } = @mrg
     db.set_foreign_keys_state false
     db SQL"""
-      drop view  if exists #{prefix}_html_tags_and_html;
-      drop table if exists #{prefix}_html_atrs;
-      drop table if exists #{prefix}_html_mirror;
-      drop table if exists #{prefix}_html_atrids;"""
+      drop  index if exists #{prefix}_html_mirror_tag_idx;
+      drop  view  if exists #{prefix}_html_tags_and_html;
+      drop  table if exists #{prefix}_html_typs;
+      drop  table if exists #{prefix}_html_atrs;
+      drop  table if exists #{prefix}_html_mirror;
+      drop  table if exists #{prefix}_html_atrids;"""
     db.set_foreign_keys_state true
     #-------------------------------------------------------------------------------------------------------
     db SQL"""
       create table #{prefix}_html_atrids (
           atrid integer not null,
-        primary key ( atrid ) );"""
+        primary key ( atrid ),
+        check ( atrid > 0 and floor( atrid ) = atrid ) );"""
     db SQL"""
       create table #{prefix}_html_atrs (
           atrid integer not null,
           k     text    not null,
           v     text    not null,
         primary key ( atrid, k ),
-        foreign key ( atrid ) references #{prefix}_html_atrids );"""
+        foreign key ( atrid ) references #{prefix}_html_atrids,
+        check ( length( k ) > 0 ) )
+        strict;"""
+    db SQL"""
+      create table #{prefix}_html_typs (
+          typ   text not null,
+          name  text not null,
+          primary key ( typ ),
+          unique ( name ),
+          check ( length( typ  ) = 1 ),
+          check ( length( name ) > 0 ) );"""
+    db SQL"""
+      insert into #{prefix}_html_typs values
+          ( '<', 'otag'     ),
+          ( '>', 'ctag'     ),
+          ( '^', 'stag'     ),
+          ( 't', 'text'     ),
+          ( 'r', 'comment'  ),
+          ( 'e', 'error'    );"""
     db SQL"""
       create table #{prefix}_html_mirror (
           dsk   text    not null,
           tid   integer not null,
-          typ   text    not null,   -- sigil, one of `<`, `>`, `^`, 't', 'c'
+          typ   text    not null,   -- node type
           tag   text,               -- null for texts, comments
           atrid integer,
           text  text,
         primary key ( dsk, tid ),
         foreign key ( dsk   ) references #{prefix}_datasources,
-        foreign key ( atrid ) references #{prefix}_html_atrids );"""
+        foreign key ( typ   ) references #{prefix}_html_typs,
+        foreign key ( atrid ) references #{prefix}_html_atrids,
+        check ( length( tag ) > 0 ) );
+      create index #{prefix}_html_mirror_tag_idx on #{prefix}_html_mirror ( tag );"""
     db SQL"""
       create view #{prefix}_html_tags_and_html as select distinct
           t.dsk                                                               as dsk,
