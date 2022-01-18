@@ -70,6 +70,13 @@ types.declare 'mrg_register_dsk_cfg', tests:
   "exactly 1 of x.path, x.url must be set":   ( x ) -> ( x.path? or x.url? ) and not ( x.path? and x.url? )
 
 #-----------------------------------------------------------------------------------------------------------
+types.declare 'mrg_append_text_cfg', tests:
+  "@isa.object x":                            ( x ) -> @isa.object x
+  "@isa.nonempty_text x.dsk":                 ( x ) -> @isa.nonempty_text x.dsk
+  "@isa.positive_integer x.trk":              ( x ) -> @isa.positive_integer x.trk
+  "@isa.text x.text":                         ( x ) -> @isa.text x.text
+
+#-----------------------------------------------------------------------------------------------------------
 types.declare 'mrg_fspath_for_url', tests:
   "@isa.text x":          ( x ) -> @isa.text x
   "x.startsWith '/'":     ( x ) -> x.startsWith '/'
@@ -117,6 +124,11 @@ class @Mrg
         oln:              null
         trk:              null
         pce:              null
+      #.....................................................................................................
+      mrg_append_text_cfg:
+        dsk:              null
+        trk:              1
+        txt:              null
 
   #---------------------------------------------------------------------------------------------------------
   constructor: ( cfg ) ->
@@ -162,6 +174,7 @@ class @Mrg
       drop view   if exists #{prefix}_location_from_dsk_locid;
       drop view   if exists #{prefix}_prv_nxt_xtra_from_dsk_locid;
       drop view   if exists #{prefix}_parmirror;
+      drop view   if exists #{prefix}_next_free_oln;
       drop table  if exists #{prefix}_locs;
       drop table  if exists #{prefix}_mirror;
       drop table  if exists #{prefix}_datasources;"""
@@ -278,6 +291,14 @@ class @Mrg
           partition by r1.par
           order by r1.oln, r1.trk, r1.pce
           range between unbounded preceding and unbounded following );"""
+    @db SQL"""
+      create view #{prefix}_next_free_oln as select
+          coalesce( max( oln ), 0 ) + 1 as oln
+        from #{prefix}_mirror
+        where true
+          and ( dsk = std_getv( 'dsk' ) )
+          and ( trk = std_getv( 'trk' ) )
+        limit 1;"""
     # #-------------------------------------------------------------------------------------------------------
     # TRIGGERS
     #.......................................................................................................
@@ -367,6 +388,18 @@ class @Mrg
     else if @types.isa.mrg_file_url cfg.url   then  cfg.path  = @_path_from_url cfg.url
     else                                            cfg.path  = null
     @db @sql.upsert_datasource, cfg
+    return null
+
+  #---------------------------------------------------------------------------------------------------------
+  append_text: ( cfg ) ->
+    validate.mrg_append_text_cfg ( cfg = { @constructor.C.defaults.mrg_append_text_cfg..., cfg..., } )
+    { dsk
+      trk
+      text  } = cfg
+    { prefix }  = @cfg
+    @db.setv 'dsk', dsk
+    @db.setv 'trk', trk
+    debug '^234234^', @db.all_rows SQL"""select * from #{prefix}_next_free_oln""";
     return null
 
   #---------------------------------------------------------------------------------------------------------
