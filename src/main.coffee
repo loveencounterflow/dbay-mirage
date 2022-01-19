@@ -394,6 +394,16 @@ class @Mrg
     return null
 
   #---------------------------------------------------------------------------------------------------------
+  allowing_change_on_mirror: ( f ) ->
+    validate.function f
+    allow_change_on_mirror = @db.getv 'allow_change_on_mirror'
+    @db.setv 'allow_change_on_mirror', 1
+    try
+      return f()
+    finally
+      @db.setv 'allow_change_on_mirror', allow_change_on_mirror
+
+  #---------------------------------------------------------------------------------------------------------
   append_text: ( cfg ) ->
     validate.mrg_append_text_cfg ( cfg = { @constructor.C.defaults.mrg_append_text_cfg..., cfg..., } )
     { dsk
