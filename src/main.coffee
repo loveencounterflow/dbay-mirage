@@ -24,6 +24,7 @@ SQL                       = String.raw
 GUY                       = require 'guy'
 { HTMLISH: ITXH }         = require 'intertext'
 URL                       = require 'url'
+{ Html }                  = require './html'
 
 
 #===========================================================================================================
@@ -143,6 +144,7 @@ class @Mrg
     @_create_sql_functions?()
     @_compile_sql?()
     @_procure_infrastructure?()
+    GUY.props.hide @, 'html', new Html { mrg: @, prefix: @cfg.prefix, }
     return undefined
 
   #---------------------------------------------------------------------------------------------------------
