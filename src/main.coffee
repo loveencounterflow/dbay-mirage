@@ -357,33 +357,39 @@ class @Mrg
         into:       prefix + '_mirror',
         fields:     [ 'dsk', 'oln', 'trk', 'txt', ], }
       #.....................................................................................................
-      insert_xtra: @db.create_insert {
-        into:       prefix + '_mirror',
-        fields:     [ 'dsk', 'oln', 'pce', 'xtra', 'txt', ],
-        returning:  '*', }
-      #.....................................................................................................
-      insert_xtra_using_dsk_locid: SQL"""
-        -- needs variables 'dsk', 'locid'
-        -- unfortunately, got to repeat the `std_assert()` call here
-        insert into #{prefix}_mirror ( dsk, oln, pce, xtra, txt )
-          select
-              $dsk                                                    as dsk,
-              std_assert(
-                oln,
-                '^insert_xtra_using_dsk_locid@546^' ||
-                ' unknown locid ' || quote( std_getv( 'locid' ) ) )   as oln,
-              pce                                                     as pce,
-              nxt_xtra                                                as nxt_xtra,
-              $txt                                                    as txt
-            from #{prefix}_prv_nxt_xtra_from_dsk_locid
       append_text: SQL"""
         insert into #{prefix}_mirror ( dsk, oln, trk, txt )
           values ( $dsk, ( select oln from #{prefix}_next_free_oln ), $trk, $text )
           returning *;"""
-      #.....................................................................................................
-      insert_locid: @db.create_insert {
-        into:       prefix + '_locs',
-        fields:     [ 'dsk', 'oln', 'pce', 'props', 'del', ], }
+      # #.....................................................................................................
+      # insert_lnpart: @db.create_insert {
+      #   into:       prefix + '_mirror',
+      #   fields:     [ 'dsk', 'oln', 'trk', 'pce', 'txt', ], }
+      # #.....................................................................................................
+      # insert_xtra: @db.create_insert {
+      #   into:       prefix + '_mirror',
+      #   fields:     [ 'dsk', 'oln', 'pce', 'xtra', 'txt', ],
+      #   returning:  '*', }
+      # #.....................................................................................................
+      # insert_xtra_using_dsk_locid: SQL"""
+      #   -- needs variables 'dsk', 'locid'
+      #   -- unfortunately, got to repeat the `std_assert()` call here
+      #   insert into #{prefix}_mirror ( dsk, oln, pce, xtra, txt )
+      #     select
+      #         $dsk                                                    as dsk,
+      #         std_assert(
+      #           oln,
+      #           '^insert_xtra_using_dsk_locid@546^' ||
+      #           ' unknown locid ' || quote( std_getv( 'locid' ) ) )   as oln,
+      #         pce                                                     as pce,
+      #         nxt_xtra                                                as nxt_xtra,
+      #         $txt                                                    as txt
+      #       from #{prefix}_prv_nxt_xtra_from_dsk_locid
+      #     returning *;"""
+      # #.....................................................................................................
+      # insert_locid: @db.create_insert {
+      #   into:       prefix + '_locs',
+      #   fields:     [ 'dsk', 'oln', 'pce', 'props', 'del', ], }
     #.......................................................................................................
     return null
 
