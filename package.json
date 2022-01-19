@@ -32,10 +32,10 @@
     "hdml": "^1.0.2",
     "intertext": "^8.0.0",
     "intertype": "^7.7.0",
-    "paragate": "3.0.1"
+    "paragate": "4.0.0"
   },
   "devDependencies": {
-    "dbay": "^10.121.1"
+    "dbay": "10.122.0"
   },
   "peerDependencies": {
     "dbay": "^10.121.1"
