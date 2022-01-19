@@ -257,7 +257,6 @@ class @Html
     #.......................................................................................................
     for { par, rwn1, rwn2, txt, } from @mrg.get_par_rows { dsk, }
       tokens = HTMLISH.parse txt
-      console.table tokens
       for d in tokens
         switch d.$key
           when '<tag'     then @_append_tag dsk, '<', d.name, d.atrs
