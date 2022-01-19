@@ -185,7 +185,7 @@ class @Html
           typ   text    not null,   -- node type
           tag   text,               -- null for texts, comments
           atrid integer,
-          text  text,
+          txt   text,
         primary key ( dsk, tid ),
         foreign key ( dsk   ) references #{prefix}_datasources,
         foreign key ( typ   ) references #{prefix}_html_typs,
@@ -199,7 +199,7 @@ class @Html
           t.typ                                                               as typ,
           t.tag                                                               as tag,
           t.atrid                                                             as atrid,
-          #{prefix}_html_create_tag( t.typ, t.tag, a.k, a.v, t.text ) over w  as html
+          #{prefix}_html_create_tag( t.typ, t.tag, a.k, a.v, t.txt ) over w   as html
         from
           #{prefix}_html_mirror as t
           left join #{prefix}_html_atrs as a using ( atrid )
@@ -225,8 +225,8 @@ class @Html
       the VNR gets more realistic (dsk, linenr, ...) ###
       insert_content:    db.prepare SQL"""
         with v1 as ( select coalesce( max( tid ), 0 ) + 1 as tid from #{prefix}_html_mirror where dsk = $dsk )
-        insert into #{prefix}_html_mirror ( dsk, tid, typ, tag, atrid, text )
-          values ( $dsk, ( select tid from v1 ), $typ, $tag, $atrid, $text )
+        insert into #{prefix}_html_mirror ( dsk, tid, typ, tag, atrid, txt )
+          values ( $dsk, ( select tid from v1 ), $typ, $tag, $atrid, $txt )
           returning *;"""
       insert_atr:        db.prepare_insert { into: "#{prefix}_html_atrs",         returning: null, }
     #.......................................................................................................
@@ -240,7 +240,7 @@ class @Html
       for k, v of atrs
         v = rpr v unless isa.text v
         @statements.insert_atr.run { atrid, k, v, }
-    return @mrg.db.first_row @statements.insert_content, { dsk, typ, tag, atrid, text, }
+    return @mrg.db.first_row @statements.insert_content, { dsk, typ, tag, atrid, txt: text, }
 
   #---------------------------------------------------------------------------------------------------------
   render_dsk: ( cfg ) ->
