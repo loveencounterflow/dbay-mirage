@@ -180,13 +180,16 @@ class @Html
           ( 'e', 'error'    );"""
     db SQL"""
       create table #{prefix}_html_mirror (
-          dsk   text    not null,
-          tid   integer not null,
-          typ   text    not null,   -- node type
-          tag   text,               -- null for texts, comments
-          atrid integer,
+          dsk     text    not null,                         -- data source key
+          oln     integer not null,                         -- original line nr (1-based)
+          trk     integer not null default 1,               -- track number
+          pce     integer not null default 1,               -- piece number
+          typ     text    not null,                         -- node type
+          tag     text,                                     -- null for texts, comments
+          atrid   integer,
+          -- act     boolean not null default 1,               -- true: active, false: deleted
           txt   text,
-        primary key ( dsk, tid ),
+        primary key ( dsk, oln, trk, pce ),
         foreign key ( dsk   ) references #{prefix}_datasources,
         foreign key ( typ   ) references #{prefix}_html_typs,
         foreign key ( atrid ) references #{prefix}_html_atrids,
@@ -195,7 +198,9 @@ class @Html
     db SQL"""
       create view #{prefix}_html_tags_and_html as select distinct
           t.dsk                                                               as dsk,
-          t.tid                                                               as tid,
+          t.oln                                                               as oln,
+          t.trk                                                               as trk,
+          t.pce                                                               as pce,
           t.typ                                                               as typ,
           t.tag                                                               as tag,
           t.atrid                                                             as atrid,
@@ -206,10 +211,10 @@ class @Html
         where true
           and ( t.dsk = std_getv( 'dsk' ) )
         window w as (
-          partition by t.tid
+          partition by t.dsk, t.oln, t.trk, t.pce
           order by a.k
           rows between unbounded preceding and unbounded following )
-        order by tid;"""
+        order by t.dsk, t.oln, t.trk, t.pce;"""
     #.......................................................................................................
     return null
 
