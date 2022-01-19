@@ -368,7 +368,7 @@ class @Mrg
       #.....................................................................................................
       insert_trk_line: @db.create_insert {
         into:       prefix + '_mirror',
-        fields:     [ 'dsk', 'oln', 'trk', 'txt', ], }
+        fields:     [ 'dsk', 'oln', 'trk', 'pce', 'txt', ], }
       #.....................................................................................................
       append_text: SQL"""
         insert into #{prefix}_mirror ( dsk, oln, trk, txt )
