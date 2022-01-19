@@ -2,12 +2,12 @@ lockfileVersion: 5.3
 
 specifiers:
   cnd: ^9.2.2
-  dbay: ^10.121.1
+  dbay: 10.122.0
   guy: ^3.1.0
   hdml: ^1.0.2
   intertext: ^8.0.0
   intertype: ^7.7.0
-  paragate: 3.0.1
+  paragate: 4.0.0
 
 dependencies:
   cnd: 9.2.2
@@ -15,10 +15,10 @@ dependencies:
   hdml: 1.0.2
   intertext: 8.0.0
   intertype: 7.7.0
-  paragate: 3.0.1
+  paragate: 4.0.0
 
 devDependencies:
-  dbay: 10.121.1
+  dbay: 10.122.0
 
 packages:
 
@@ -90,8 +90,8 @@ packages:
       multimix: 5.0.0
     dev: false
 
-  /dbay/10.121.1:
-    resolution: {integrity: sha512-AUc9V07t6sBrL11xWQpAg/izFqnL9+yw8hZbBP6XIdgmnX2UqjYyKOjnUnPExFg4W5txm05W1CDXRxs5vLMeWQ==}
+  /dbay/10.122.0:
+    resolution: {integrity: sha512-jCEb6dkExaJC+KL9fAAqKhLVIRESvRgiPrFzQ+halBI94zIr2NRr7kAzKi3YDQs6xODCMhh6hTxf/k27FZYHkQ==}
     requiresBuild: true
     dependencies:
       cnd: 9.2.2
@@ -209,8 +209,8 @@ packages:
       wrappy: 1.0.2
     dev: false
 
-  /paragate/3.0.1:
-    resolution: {integrity: sha512-ha7Ca5tCwiRWH6M8W4ltGtwLHXeKMTjL2C5joQGetTHMhbnsU20rk1MUNuhphRe7AWZe9HKI2du1efXwLVzgtw==}
+  /paragate/4.0.0:
+    resolution: {integrity: sha512-A8YfTy45QXLe/Wm8rwjTzN5J9g4YxEnAxZsVEv0FdKeBs/ENIvZAiJ/KHwovQ8NE141/L5jJOnpy3QZZJ09vTg==}
     dependencies:
       chevrotain: 9.1.0
       cnd: 9.2.2
