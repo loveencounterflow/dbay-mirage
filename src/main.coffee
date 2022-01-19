@@ -353,9 +353,9 @@ class @Mrg
         into:       prefix + '_mirror',
         fields:     [ 'dsk', 'oln', 'txt', ], }
       #.....................................................................................................
-      insert_lnpart: @db.create_insert {
+      insert_trk_line: @db.create_insert {
         into:       prefix + '_mirror',
-        fields:     [ 'dsk', 'oln', 'trk', 'pce', 'txt', ], }
+        fields:     [ 'dsk', 'oln', 'trk', 'txt', ], }
       #.....................................................................................................
       insert_xtra: @db.create_insert {
         into:       prefix + '_mirror',
