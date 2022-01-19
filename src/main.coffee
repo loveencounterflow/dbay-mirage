@@ -376,6 +376,9 @@ class @Mrg
               nxt_xtra                                                as nxt_xtra,
               $txt                                                    as txt
             from #{prefix}_prv_nxt_xtra_from_dsk_locid
+      append_text: SQL"""
+        insert into #{prefix}_mirror ( dsk, oln, trk, txt )
+          values ( $dsk, ( select oln from #{prefix}_next_free_oln ), $trk, $text )
           returning *;"""
       #.....................................................................................................
       insert_locid: @db.create_insert {
@@ -408,12 +411,15 @@ class @Mrg
     validate.mrg_append_text_cfg ( cfg = { @constructor.C.defaults.mrg_append_text_cfg..., cfg..., } )
     { dsk
       trk
-      text  } = cfg
-    { prefix }  = @cfg
+      text    } = cfg
+    { prefix  } = @cfg
+    lines       = text.split '\n'
+    R           = []
     @db.setv 'dsk', dsk
     @db.setv 'trk', trk
-    debug '^234234^', @db.all_rows SQL"""select * from #{prefix}_next_free_oln""";
-    return null
+    for line in lines
+      R.push @allowing_change_on_mirror => @db.first_row @sql.append_text, { dsk, trk, text: line, }
+    return R
 
   #---------------------------------------------------------------------------------------------------------
   _ds_entry_from_dsk: ( dsk ) -> @db.single_row @sql.ds_entry_from_dsk, { dsk, }
