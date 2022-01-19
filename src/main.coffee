@@ -298,15 +298,20 @@ class @Mrg
     @db SQL"""
       -- needs variables 'dsk'
       create view #{prefix}_pars as select
-          dsk                                                       as dsk,
-          ( select oln from #{prefix}_parlnrs0 where rwn = rwn1 )   as oln1,
-          ( select oln from #{prefix}_parlnrs0 where rwn = rwn2 )   as oln2,
-          rwn1                                                      as rwn1,
-          rwn2                                                      as rwn2,
-          par                                                       as par,
-          txt                                                       as txt
-        from #{prefix}_pars0
-        order by dsk, rwn1;"""
+          p.dsk     as dsk,
+          r1.oln    as oln,
+          r1.trk    as trk,
+          r1.pce    as pce,
+          r2.oln    as oln2,
+          p.rwn1    as rwn1,
+          p.rwn2    as rwn2,
+          p.par     as par,
+          p.txt     as txt
+        from #{prefix}_pars0 as p
+        join #{prefix}_parlnrs0 as r1 on ( r1.rwn = p.rwn1 )
+        join #{prefix}_parlnrs0 as r2 on ( r2.rwn = p.rwn2 )
+        order by p.dsk, p.rwn1;"""
+    #.......................................................................................................
     @db SQL"""
       create view #{prefix}_next_free_oln as select
           coalesce( max( oln ), 0 ) + 1 as oln
