@@ -199,7 +199,7 @@ class @Html
           t.typ                                                               as typ,
           t.tag                                                               as tag,
           t.atrid                                                             as atrid,
-          #{prefix}_html_create_tag( t.typ, t.tag, a.k, a.v, t.text ) over w  as xxx
+          #{prefix}_html_create_tag( t.typ, t.tag, a.k, a.v, t.text ) over w  as html
         from
           #{prefix}_html_mirror as t
           left join #{prefix}_html_atrs as a using ( atrid )
@@ -248,7 +248,7 @@ class @Html
     { db      } = @mrg
     { prefix  } = @cfg
     db.setv 'dsk', dsk
-    return ( db.all_first_values SQL"select xxx from #{prefix}_html_tags_and_html;" ).join ''
+    return ( db.all_first_values SQL"select html from #{prefix}_html_tags_and_html;" ).join ''
 
   #---------------------------------------------------------------------------------------------------------
   parse_dsk: ( cfg ) ->
