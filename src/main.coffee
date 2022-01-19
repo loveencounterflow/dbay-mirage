@@ -172,6 +172,7 @@ class @Mrg
       drop view   if exists #{prefix}_rwnmirror;
       drop view   if exists #{prefix}_parlnrs0;
       drop view   if exists #{prefix}_parlnrs;
+      drop view   if exists #{prefix}_pars0;
       drop view   if exists #{prefix}_pars;
       drop view   if exists #{prefix}_lines;
       drop view   if exists #{prefix}_location_from_dsk_locid;
