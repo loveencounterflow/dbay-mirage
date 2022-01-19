@@ -1,6 +1,6 @@
 {
   "name": "dbay-mirage",
-  "version": "1.0.2",
+  "version": "2.0.0",
   "description": "DBay plugin to mirror, parse and process text files (HTML, CSV, ...) in SQL",
   "main": "lib/main.js",
   "scripts": {
