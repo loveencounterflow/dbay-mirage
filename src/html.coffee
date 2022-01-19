@@ -229,23 +229,19 @@ class @Html
       ### NOTE we don't use `autoincrement` b/c this is the more general solution; details will change when
       the VNR gets more realistic (dsk, linenr, ...) ###
       insert_content:    db.prepare SQL"""
-        with v1 as ( select coalesce( max( tid ), 0 ) + 1 as tid from #{prefix}_html_mirror where dsk = $dsk )
-        insert into #{prefix}_html_mirror ( dsk, tid, typ, tag, atrid, txt )
-          values ( $dsk, ( select tid from v1 ), $typ, $tag, $atrid, $txt )
+        with v1 as ( select
+            coalesce( max( pce ), 0 ) + 1 as pce
+          from #{prefix}_html_mirror
+          where true
+            and ( dsk = $dsk )
+            and ( oln = $oln )
+            and ( trk = $trk ) )
+        insert into #{prefix}_html_mirror ( dsk, oln, trk, pce, typ, tag, atrid, txt )
+          values ( $dsk, $oln, $trk, ( select pce from v1 ), $typ, $tag, $atrid, $txt )
           returning *;"""
       insert_atr:        db.prepare_insert { into: "#{prefix}_html_atrs",         returning: null, }
     #.......................................................................................................
     return null
-
-  #---------------------------------------------------------------------------------------------------------
-  _append_tag: ( dsk, typ, tag, atrs = null, text = null ) ->
-    atrid = null
-    if atrs?
-      { atrid } = @mrg.db.first_row @statements.insert_atrid
-      for k, v of atrs
-        v = rpr v unless isa.text v
-        @statements.insert_atr.run { atrid, k, v, }
-    return @mrg.db.first_row @statements.insert_content, { dsk, typ, tag, atrid, txt: text, }
 
   #---------------------------------------------------------------------------------------------------------
   render_dsk: ( cfg ) ->
@@ -256,28 +252,38 @@ class @Html
     return ( db.all_first_values SQL"select html from #{prefix}_html_tags_and_html;" ).join ''
 
   #---------------------------------------------------------------------------------------------------------
+  _append_tag: ( dsk, oln, trk, typ, tag, atrs = null, text = null ) ->
+    atrid = null
+    if atrs?
+      { atrid } = @mrg.db.first_row @statements.insert_atrid
+      for k, v of atrs
+        v = rpr v unless isa.text v
+        @statements.insert_atr.run { atrid, k, v, }
+    return @mrg.db.first_row @statements.insert_content, { dsk, oln, trk, typ, tag, atrid, txt: text, }
+
+  #---------------------------------------------------------------------------------------------------------
   parse_dsk: ( cfg ) ->
     validate.mrg_parse_dsk_cfg ( cfg = { @constructor.C.defaults.mrg_parse_dsk_cfg..., cfg..., } )
     { dsk } = cfg
     #.......................................................................................................
-    for { par, rwn1, rwn2, txt, } from @mrg.get_par_rows { dsk, }
+    for { oln, trk, txt, } from @mrg.get_par_rows { dsk, }
       tokens = HTMLISH.parse txt
       for d in tokens
         switch d.$key
-          when '<tag'     then @_append_tag dsk, '<', d.name, d.atrs
-          when '>tag'     then @_append_tag dsk, '>', d.name, d.atrs
-          when '^tag'     then @_append_tag dsk, '^', d.name, d.atrs
-          when '^text'    then @_append_tag dsk, 't', null, null, d.text
+          when '<tag'     then @_append_tag dsk, oln, trk, '<', d.name, d.atrs
+          when '>tag'     then @_append_tag dsk, oln, trk, '>', d.name, d.atrs
+          when '^tag'     then @_append_tag dsk, oln, trk, '^', d.name, d.atrs
+          when '^text'    then @_append_tag dsk, oln, trk, 't', null, null, d.text
           when '^comment'
-            @_append_tag dsk, 'r', null, null, d.text.replace /^<!--\s*(.*?)\s*-->$/, '$1'
+            @_append_tag dsk, oln, trk, 'r', null, null, d.text.replace /^<!--\s*(.*?)\s*-->$/, '$1'
           when '^error'
             atrs = { start: d.start, stop: d.stop, code: d.code, }
-            @_append_tag dsk, 'e', null, atrs, "#{d.message}: #{rpr d.text}"
+            @_append_tag dsk, oln, trk, 'e', null, atrs, "#{d.message}: #{rpr d.text}"
           else
             warn '^435345^', "unhandled token #{rpr d}"
             atrs  = { start: d.start, stop: d.stop, code: 'unhandled', }
             d     = { $key: d.$key, name: d.name, type: d.type, }
-            @_append_tag dsk, 'e', null, atrs, "unhandled token: #{rpr d}"
+            @_append_tag dsk, oln, trk, 'e', null, atrs, "unhandled token: #{rpr d}"
     return null
 
 
