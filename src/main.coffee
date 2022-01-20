@@ -180,6 +180,7 @@ class @Mrg
       drop view   if exists #{prefix}_parmirror;
       drop view   if exists #{prefix}_next_free_oln;
       drop table  if exists #{prefix}_locs;
+      drop table  if exists #{prefix}_raw_mirror;
       drop table  if exists #{prefix}_mirror;
       drop table  if exists #{prefix}_datasources;"""
     @db.set_foreign_keys_state true
@@ -204,12 +205,23 @@ class @Mrg
           trk     integer not null default 1,               -- track number
           pce     integer not null default 1,               -- piece number
           act     boolean not null default 1,               -- true: active, false: deleted
+        foreign key ( dsk ) references #{prefix}_datasources,
+        primary key ( dsk, oln, trk, pce )
+        check ( trk > 0 and floor( trk ) = trk )
+        check ( act in ( 0, 1 ) ) );"""
+    #.......................................................................................................
+    @db SQL"""
+      create table #{prefix}_raw_mirror (
+          dsk     text    not null,
+          oln     integer not null,
+          trk     integer not null default 1,
+          pce     integer not null default 1,
           mat     boolean not null generated always as (
             not #{prefix}_re_is_blank( txt ) ) virtual,     -- material, i.e. non-blank
           txt     text    not null,
-        foreign key ( dsk ) references #{prefix}_datasources,
-        primary key ( dsk, oln, trk, pce )
-        check ( trk > 0 and floor( trk ) = trk ) );"""
+        primary key ( dsk, oln, trk, pce ),
+        foreign key ( dsk, oln, trk, pce ) references #{prefix}_mirror
+        check ( mat in ( 0, 1 ) ) );"""
     #.......................................................................................................
     @db SQL"""
       -- Same as `mrg_mirror`, but with row numbers *for active rows*
@@ -226,12 +238,15 @@ class @Mrg
       -- and/or blank), with PARagraph numbers added (for the technique ised here see [Gaps &
       -- Islands](https://github.com/loveencounterflow/gaps-and-islands#the-gaps-and-islands-pattern).
       create view #{prefix}_parlnrs0 as select
-          rwn - ( dense_rank() over w ) + 1 as par,
-          *
-        from #{prefix}_rwnmirror
-        where act and mat
-        window w as ( partition by dsk order by rwn )
-        order by rwn;"""
+          r1.rwn - ( dense_rank() over w ) + 1 as par,
+          r1.*,
+          r2.mat,
+          r2.txt
+        from #{prefix}_rwnmirror  as r1
+        join #{prefix}_raw_mirror as r2
+        where r1.act and r2.mat
+        window w as ( partition by r1.dsk order by r1.rwn )
+        order by r1.rwn;"""
     #.......................................................................................................
     @db SQL"""
       -- First (`rwn1`) and last (`rwn2`) RoW Number of each (WS-delimited) `par`agraph.
@@ -247,18 +262,19 @@ class @Mrg
     @db SQL"""
       -- Same as `mrg_mirror` but with PARagraph numbers added.
       create view #{prefix}_parmirror as select
-          dsk                                                   as dsk,
-          oln                                                   as oln,
-          trk                                                   as trk,
-          pce                                                   as pce,
-          act                                                   as act,
-          mat                                                   as mat,
+          m.dsk                                                 as dsk,
+          m.oln                                                 as oln,
+          m.trk                                                 as trk,
+          m.pce                                                 as pce,
+          m.act                                                 as act,
+          r.mat                                                 as mat,
           ( select
                 p.par as par
               from #{prefix}_parlnrs as p
               where m.rwn between p.rwn1 and p.rwn2 limit 1 )   as par,
-          txt                                                   as txt
-        from #{prefix}_rwnmirror as m
+          r.txt                                                 as txt
+        from #{prefix}_rwnmirror  as m
+        join #{prefix}_raw_mirror as r using ( oln, trk, pce )
         order by rwn;"""
     # #.......................................................................................................
     # @db SQL"""
@@ -286,8 +302,9 @@ class @Mrg
           r2.rwn2                                                                   as rwn2,
           r1.par                                                                    as par,
           coalesce( group_concat( r1.txt, char( 10 ) ) over w, '' ) || char( 10 )   as txt
-        from #{prefix}_parmirror as r1
-        join #{prefix}_parlnrs as r2 using ( dsk, par )
+        from #{prefix}_parmirror  as r1
+        join #{prefix}_parlnrs    as r2 using ( dsk, par )
+        -- join #{prefix}_raw_mirror as r3 using ( oln, trk, pce )
         where true
           and ( r1.dsk = std_getv( 'dsk' ) )
           and ( r1.act )
@@ -308,9 +325,9 @@ class @Mrg
           p.rwn2    as rwn2,
           p.par     as par,
           p.txt     as txt
-        from #{prefix}_pars0 as p
-        join #{prefix}_parlnrs0 as r1 on ( r1.rwn = p.rwn1 )
-        join #{prefix}_parlnrs0 as r2 on ( r2.rwn = p.rwn2 )
+        from #{prefix}_pars0      as p
+        join #{prefix}_parlnrs0   as r1 on ( r1.rwn = p.rwn1 )
+        join #{prefix}_parlnrs0   as r2 on ( r2.rwn = p.rwn2 )
         order by p.dsk, p.rwn1;"""
     #.......................................................................................................
     @db SQL"""
@@ -360,7 +377,10 @@ class @Mrg
       update_digest: SQL"""
         update #{prefix}_datasources set digest = $digest where dsk = $dsk;"""
       #.....................................................................................................
-      delete_lines: SQL"""
+      delete_raw_mirror_dsk: SQL"""
+        delete from #{prefix}_raw_mirror where dsk = $dsk;"""
+      #.....................................................................................................
+      delete_mirror_dsk: SQL"""
         delete from #{prefix}_mirror where dsk = $dsk;"""
       #.....................................................................................................
       upsert_datasource: @db.create_insert {
@@ -368,17 +388,26 @@ class @Mrg
         fields: [ 'dsk', 'path', 'url', ],
         on_conflict: { update: true, }, }
       #.....................................................................................................
-      insert_line: @db.create_insert {
+      insert_line_into_mirror: @db.create_insert {
         into:       prefix + '_mirror',
+        fields:     [ 'dsk', 'oln', ], }
+      #.....................................................................................................
+      insert_line_into_raw_mirror: @db.create_insert {
+        into:       prefix + '_raw_mirror',
         fields:     [ 'dsk', 'oln', 'txt', ], }
       #.....................................................................................................
       insert_trk_line: @db.create_insert {
         into:       prefix + '_mirror',
-        fields:     [ 'dsk', 'oln', 'trk', 'pce', 'txt', ], }
+        fields:     [ 'dsk', 'oln', 'trk', 'pce', ], }
       #.....................................................................................................
-      append_text: SQL"""
-        insert into #{prefix}_mirror ( dsk, oln, trk, txt )
-          values ( $dsk, ( select oln from #{prefix}_next_free_oln ), $trk, $text )
+      append_line_to_mirror: SQL"""
+        insert into #{prefix}_mirror ( dsk, oln, trk )
+          values ( $dsk, ( select oln from #{prefix}_next_free_oln ), $trk )
+          returning *;"""
+      #.....................................................................................................
+      append_text_to_raw_mirror: SQL"""
+        insert into #{prefix}_raw_mirror ( dsk, oln, trk, txt )
+          values ( $dsk, $oln, $trk, $text )
           returning *;"""
       # #.....................................................................................................
       # insert_lnpart: @db.create_insert {
@@ -442,14 +471,23 @@ class @Mrg
     R           = []
     @db.setv 'dsk', dsk
     @db.setv 'trk', trk
-    for line in lines
-      R.push @allowing_change_on_mirror => @db.first_row @sql.append_text, { dsk, trk, text: line, }
+    @allowing_change_on_mirror =>
+      for line in lines
+        d = @db.first_row @sql.append_line_to_mirror, { dsk, trk, }
+        debug '^32243^', d
+        R.push @db.first_row @sql.append_text_to_raw_mirror,  { dsk, oln: d.oln, trk, text: line, }
+      return null
     return R
 
   #---------------------------------------------------------------------------------------------------------
   _ds_entry_from_dsk: ( dsk ) -> @db.single_row @sql.ds_entry_from_dsk, { dsk, }
   _update_digest: ( dsk, digest ) -> @db @sql.update_digest, { dsk, digest, }
-  _delete_lines: ( dsk ) -> @db @sql.delete_lines, { dsk, }
+
+  #-----------------------------------------------------------------------------------------------------------
+  _delete_lines: ( dsk ) ->
+    @db @sql.delete_raw_mirror_dsk, { dsk, }
+    @db @sql.delete_mirror_dsk,     { dsk, }
+    return null
 
   #-----------------------------------------------------------------------------------------------------------
   _url_from_path: ( path ) -> ( URL.pathToFileURL path ).href
@@ -482,14 +520,17 @@ class @Mrg
       #.....................................................................................................
       @db =>
         @_delete_lines dsk
-        insert_line   = @db.prepare @sql.insert_line
-        oln           = 0
+        insert_line_into_mirror     = @db.prepare @sql.insert_line_into_mirror
+        insert_line_into_raw_mirror = @db.prepare @sql.insert_line_into_raw_mirror
+        oln                         = 0
         #...................................................................................................
         for line from GUY.fs.walk_lines path, { decode: false, }
           oln++
           counts.bytes   += line.length
           txt             = line.toString 'utf-8'
-          insert_line.run { dsk, oln, txt, }
+          ### TAINT reduce to single statement ###
+          insert_line_into_mirror.run     { dsk, oln, }
+          insert_line_into_raw_mirror.run { dsk, oln, txt, }
         #...................................................................................................
         counts.files++
         @_update_digest dsk, current_digest
