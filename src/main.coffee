@@ -174,12 +174,12 @@ class @Mrg
       drop view   if exists #{prefix}_parlnrs;
       drop view   if exists #{prefix}_pars0;
       drop view   if exists #{prefix}_pars;
-      drop view   if exists #{prefix}_lines;
-      drop view   if exists #{prefix}_location_from_dsk_locid;
-      drop view   if exists #{prefix}_prv_nxt_xtra_from_dsk_locid;
+      -- drop view   if exists #{prefix}_lines;
+      -- drop view   if exists #{prefix}_location_from_dsk_locid;
+      -- drop view   if exists #{prefix}_prv_nxt_xtra_from_dsk_locid;
       drop view   if exists #{prefix}_parmirror;
       drop view   if exists #{prefix}_next_free_oln;
-      drop table  if exists #{prefix}_locs;
+      -- drop table  if exists #{prefix}_locs;
       drop table  if exists #{prefix}_raw_mirror;
       drop table  if exists #{prefix}_mirror;
       drop table  if exists #{prefix}_datasources;"""
@@ -237,7 +237,7 @@ class @Mrg
       -- Same as `mrg_rwnmirror` but only active, material lines (i.e. no lines that are deactivated
       -- and/or blank), with PARagraph numbers added (for the technique ised here see [Gaps &
       -- Islands](https://github.com/loveencounterflow/gaps-and-islands#the-gaps-and-islands-pattern).
-      create view #{prefix}_parlnrs0 as select
+      create view #{prefix}_parlnrs0 as select distinct
           r1.rwn - ( dense_rank() over w ) + 1 as par,
           r1.*,
           r2.mat,
@@ -546,13 +546,13 @@ class @Mrg
   get_line_rows:  ( cfg ) -> [ ( @walk_line_rows cfg )..., ]
   get_par_rows:   ( cfg ) -> [ ( @walk_par_rows  cfg )..., ]
 
-  #---------------------------------------------------------------------------------------------------------
-  walk_line_rows: ( cfg ) ->
-    validate.mrg_walk_line_rows_cfg ( cfg = { @constructor.C.defaults.mrg_walk_line_rows_cfg..., cfg..., } )
-    { dsk       } = cfg
-    { prefix    } = @cfg
-    @db.setv 'dsk', dsk
-    return @db SQL"select * from #{prefix}_lines;"
+  # #---------------------------------------------------------------------------------------------------------
+  # walk_line_rows: ( cfg ) ->
+  #   validate.mrg_walk_line_rows_cfg ( cfg = { @constructor.C.defaults.mrg_walk_line_rows_cfg..., cfg..., } )
+  #   { dsk       } = cfg
+  #   { prefix    } = @cfg
+  #   @db.setv 'dsk', dsk
+  #   return @db SQL"select * from #{prefix}_lines;"
 
   #---------------------------------------------------------------------------------------------------------
   walk_par_rows: ( cfg ) ->
