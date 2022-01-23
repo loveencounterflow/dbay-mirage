@@ -35,7 +35,7 @@
     "paragate": "4.0.0"
   },
   "devDependencies": {
-    "dbay": "10.122.0"
+    "dbay": "10.122.1"
   },
   "peerDependencies": {
     "dbay": "^10.121.1"
