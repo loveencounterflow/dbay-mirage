@@ -243,7 +243,7 @@ class @Mrg
           r2.mat,
           r2.txt
         from #{prefix}_rwnmirror  as r1
-        join #{prefix}_raw_mirror as r2
+        join #{prefix}_raw_mirror as r2 using ( dsk, oln, trk, pce )
         where r1.act and r2.mat
         window w as ( partition by r1.dsk order by r1.rwn )
         order by r1.rwn;"""
