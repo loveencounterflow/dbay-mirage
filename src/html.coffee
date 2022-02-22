@@ -126,6 +126,7 @@ class @Html
         return switch Σ.typ
           when 't' then HDML.escape_text Σ.txt
           when 'r' then "<!-- #{HDML.escape_text Σ.txt} -->"
+          when 'b' then '\n'
           when 'e' then ( HDML.create_tag '<', 'error', Σ.atrs  ) + \
                         ( HDML.escape_text Σ.txt                ) + \
                         ( HDML.create_tag '>', 'error'          )
@@ -175,6 +176,7 @@ class @Html
           ( '<', 'otag'     ),
           ( '>', 'ctag'     ),
           ( '^', 'stag'     ),
+          ( 'b', 'blank'    ),
           ( 't', 'text'     ),
           ( 'r', 'comment'  ),
           ( 'e', 'error'    );"""
@@ -267,6 +269,9 @@ class @Html
     { dsk } = cfg
     #.......................................................................................................
     for { oln, trk, txt, } from @mrg.get_par_rows { dsk, }
+      if txt is '' ### NOTE we assume `@constructor.C.trim_line_ends == true` ###
+        @_append_tag dsk, oln, trk, 'b', null, null, ''
+        continue
       tokens = HTMLISH.parse txt
       for d in tokens
         switch d.$key

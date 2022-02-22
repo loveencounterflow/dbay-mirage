@@ -94,6 +94,8 @@ class @Mrg
 
   #---------------------------------------------------------------------------------------------------------
   @C: GUY.lft.freeze
+    ### NOTE may become configurable per instance, per datasource ###
+    trim_line_ends: true
     defaults:
       #.....................................................................................................
       constructor_cfg:
@@ -170,6 +172,7 @@ class @Mrg
     @db.set_foreign_keys_state false
     @db SQL"""
       drop view   if exists #{prefix}_rwnmirror;
+      drop view   if exists #{prefix}_wspars;
       drop view   if exists #{prefix}_parlnrs0;
       drop view   if exists #{prefix}_parlnrs;
       drop view   if exists #{prefix}_pars0;
@@ -329,6 +332,28 @@ class @Mrg
         join #{prefix}_parlnrs0   as r1 on ( r1.rwn = p.rwn1 )
         join #{prefix}_parlnrs0   as r2 on ( r2.rwn = p.rwn2 )
         order by p.dsk, p.rwn1;"""
+    #.......................................................................................................
+    @db SQL"""
+      -- needs variables 'dsk'
+      -- same as `pars` but with whitespace after each paragraph where applicable
+      create view #{prefix}_wspars as select
+          p.*
+        from #{prefix}_pars       as p
+      union all
+        select
+          m.dsk       as dsk,
+          m.oln       as oln,
+          m.trk       as trk,
+          m.pce       as pce,
+          m.oln       as oln2,
+          r.rwn       as rwn1,
+          r.rwn       as rwn2,
+          m.par       as par,
+          m.txt       as txt
+        from #{prefix}_parmirror as m
+        join #{prefix}_rwnmirror as r using ( dsk, oln, trk, pce )
+        where #{prefix}_re_is_blank( m.txt )
+        order by p.dsk, p.oln, p.trk, p.pce;"""
     #.......................................................................................................
     @db SQL"""
       create view #{prefix}_next_free_oln as select
@@ -511,6 +536,8 @@ class @Mrg
     { path
       url
       digest      } = @_ds_entry_from_dsk dsk
+    ### NOTE may become configurable per instance, per datasource ###
+    trim_line_ends  = @constructor.C.trim_line_ends
     unless path?
       throw new Error "^Mirage/refresh_datasource@1^ unable to refresh datasource #{rpr dsk} (URL: #{rpr url})"
     current_digest  = GUY.fs.get_content_hash path
@@ -528,6 +555,7 @@ class @Mrg
           oln++
           counts.bytes   += line.length
           txt             = line.toString 'utf-8'
+          txt             = txt.trimEnd() if trim_line_ends
           ### TAINT reduce to single statement ###
           insert_line_into_mirror.run     { dsk, oln, }
           insert_line_into_raw_mirror.run { dsk, oln, txt, }
@@ -560,7 +588,7 @@ class @Mrg
     { dsk       } = cfg
     { prefix    } = @cfg
     @db.setv 'dsk', dsk
-    return @db SQL"select * from #{prefix}_pars;"
+    return @db SQL"select * from #{prefix}_wspars;"
 
   #---------------------------------------------------------------------------------------------------------
   activate:   ( cfg ) -> @_set_active { cfg..., act: true, }
