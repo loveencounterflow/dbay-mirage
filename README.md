@@ -28,10 +28,10 @@ This module has been pulled from [a preliminary version in
   * **[–]** there may be direct input or results of HTTP queries &cpp so better use URLs instead of file
     system paths
 * HTML:
-  * empty lines between paragraphs should be preserved
-    * what to do for trailing blank lines?
-  * tag registry so we can decide whether tag
+  **[+]** empty lines between paragraphs should be preserved
+  **[–]** what to do for trailing blank lines?
+  **[–]** tag registry so we can decide whether tag
     * is block
     * allows parsing inside (cf `<script>`, `<code>`)
-  * run all inserts to mirage HTML in single transaction
-  * consider to add CFG to `walk_par_rows()` to indicate whether to keep or to skip empty/blank lines
+  **[–]** run all inserts to mirage HTML in single transaction
+  **[–]** consider to add CFG to `walk_par_rows()` to indicate whether to keep or to skip empty/blank lines
