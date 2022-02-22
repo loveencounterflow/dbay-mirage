@@ -125,7 +125,7 @@ class @Html
         return '' unless Σ?
         return switch Σ.typ
           when 't' then HDML.escape_text Σ.txt
-          when 'c' then "<!-- #{HDML.escape_text Σ.txt} -->"
+          when 'r' then "<!-- #{HDML.escape_text Σ.txt} -->"
           when 'e' then ( HDML.create_tag '<', 'error', Σ.atrs  ) + \
                         ( HDML.escape_text Σ.txt                ) + \
                         ( HDML.create_tag '>', 'error'          )
