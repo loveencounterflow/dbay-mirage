@@ -29,6 +29,7 @@ This module has been pulled from [a preliminary version in
     system paths
 * HTML:
   * empty lines between paragraphs should be preserved
+    * what to do for trailing blank lines?
   * tag registry so we can decide whether tag
     * is block
     * allows parsing inside (cf `<script>`, `<code>`)
