@@ -27,3 +27,10 @@ This module has been pulled from [a preliminary version in
     should be a flag for that.
   * **[–]** there may be direct input or results of HTTP queries &cpp so better use URLs instead of file
     system paths
+* HTML:
+  * empty lines between paragraphs should be preserved
+  * tag registry so we can decide whether tag
+    * is block
+    * allows parsing inside (cf `<script>`, `<code>`)
+  * run all inserts to mirage HTML in single transaction
+
