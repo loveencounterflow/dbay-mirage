@@ -34,4 +34,4 @@ This module has been pulled from [a preliminary version in
     * is block
     * allows parsing inside (cf `<script>`, `<code>`)
   * run all inserts to mirage HTML in single transaction
-
+  * consider to add CFG to `walk_par_rows()` to indicate whether to keep or to skip empty/blank lines
