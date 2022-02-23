@@ -270,10 +270,7 @@ class @Html
     { dsk } = cfg
     #.......................................................................................................
     @mrg.db.with_transaction =>
-      for { oln1: oln, trk, txt, } from @mrg.get_par_rows { dsk, }
-        if txt is '' ### NOTE we assume `@constructor.C.trim_line_ends == true` ###
-          @_append_tag dsk, oln, trk, 'b', null, null, ''
-          continue
+      for { oln1: oln, wslc, trk, txt, } from @mrg.get_par_rows { dsk, }
         tokens = @HTMLISH.parse txt
         for d in tokens
           switch d.$key
@@ -291,6 +288,8 @@ class @Html
               atrs  = { start: d.start, stop: d.stop, code: 'unhandled', }
               d     = { $key: d.$key, name: d.name, type: d.type, }
               @_append_tag dsk, oln, trk, 'e', null, atrs, "unhandled token: #{rpr d}"
+        for _ in [ 1 .. wslc + 1 ]
+          @_append_tag dsk, oln, trk, 'b', null, null, '\n'
     return null
 
 
