@@ -268,27 +268,28 @@ class @Html
     validate.mrg_parse_dsk_cfg ( cfg = { @constructor.C.defaults.mrg_parse_dsk_cfg..., cfg..., } )
     { dsk } = cfg
     #.......................................................................................................
-    for { oln, trk, txt, } from @mrg.get_par_rows { dsk, }
-      if txt is '' ### NOTE we assume `@constructor.C.trim_line_ends == true` ###
-        @_append_tag dsk, oln, trk, 'b', null, null, ''
-        continue
-      tokens = HTMLISH.parse txt
-      for d in tokens
-        switch d.$key
-          when '<tag'     then @_append_tag dsk, oln, trk, '<', d.name, d.atrs
-          when '>tag'     then @_append_tag dsk, oln, trk, '>', d.name, d.atrs
-          when '^tag'     then @_append_tag dsk, oln, trk, '^', d.name, d.atrs
-          when '^text'    then @_append_tag dsk, oln, trk, 't', null, null, d.text
-          when '^comment'
-            @_append_tag dsk, oln, trk, 'r', null, null, d.text.replace /^<!--\s*(.*?)\s*-->$/, '$1'
-          when '^error'
-            atrs = { start: d.start, stop: d.stop, code: d.code, }
-            @_append_tag dsk, oln, trk, 'e', null, atrs, "#{d.message}: #{rpr d.text}"
-          else
-            warn '^435345^', "unhandled token #{rpr d}"
-            atrs  = { start: d.start, stop: d.stop, code: 'unhandled', }
-            d     = { $key: d.$key, name: d.name, type: d.type, }
-            @_append_tag dsk, oln, trk, 'e', null, atrs, "unhandled token: #{rpr d}"
+    @mrg.db.with_transaction =>
+      for { oln, trk, txt, } from @mrg.get_par_rows { dsk, }
+        if txt is '' ### NOTE we assume `@constructor.C.trim_line_ends == true` ###
+          @_append_tag dsk, oln, trk, 'b', null, null, ''
+          continue
+        tokens = HTMLISH.parse txt
+        for d in tokens
+          switch d.$key
+            when '<tag'     then @_append_tag dsk, oln, trk, '<', d.name, d.atrs
+            when '>tag'     then @_append_tag dsk, oln, trk, '>', d.name, d.atrs
+            when '^tag'     then @_append_tag dsk, oln, trk, '^', d.name, d.atrs
+            when '^text'    then @_append_tag dsk, oln, trk, 't', null, null, d.text
+            when '^comment'
+              @_append_tag dsk, oln, trk, 'r', null, null, d.text.replace /^<!--\s*(.*?)\s*-->$/, '$1'
+            when '^error'
+              atrs = { start: d.start, stop: d.stop, code: d.code, }
+              @_append_tag dsk, oln, trk, 'e', null, atrs, "#{d.message}: #{rpr d.text}"
+            else
+              warn '^435345^', "unhandled token #{rpr d}"
+              atrs  = { start: d.start, stop: d.stop, code: 'unhandled', }
+              d     = { $key: d.$key, name: d.name, type: d.type, }
+              @_append_tag dsk, oln, trk, 'e', null, atrs, "unhandled token: #{rpr d}"
     return null
 
 
