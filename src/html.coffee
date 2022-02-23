@@ -20,8 +20,8 @@ types                     = new ( require 'intertype' ).Intertype()
   type_of
   validate
   validate_list_of }      = types.export()
-SQL                       = String.raw
 GUY                       = require 'guy'
+{ SQL }                   = GUY.str
 { HDML }                  = require 'hdml'
 _HTMLISH                  = ( require 'paragate/lib/htmlish.grammar' ).new_grammar { bare: true, }
 { lets

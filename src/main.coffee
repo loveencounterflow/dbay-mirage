@@ -20,11 +20,11 @@ types                     = new ( require 'intertype' ).Intertype()
   type_of
   validate
   validate_list_of }      = types.export()
-SQL                       = String.raw
 GUY                       = require 'guy'
 { HTMLISH: ITXH }         = require 'intertext'
 URL                       = require 'url'
 { Html }                  = require './html'
+{ SQL }                   = GUY.str
 
 
 #===========================================================================================================
