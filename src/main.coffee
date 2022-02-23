@@ -156,12 +156,12 @@ class @Mrg
   #---------------------------------------------------------------------------------------------------------
   _create_sql_functions: ->
     { prefix } = @cfg
-    #-------------------------------------------------------------------------------------------------------
-    @db.create_function
-      name:           prefix + '_re_is_blank'
-      deterministic:  true
-      varargs:        false
-      call:           ( txt ) -> if ( /^\s*$/.test txt ) then 1 else 0
+    # #-------------------------------------------------------------------------------------------------------
+    # @db.create_function
+    #   name:           prefix + '_re_is_blank'
+    #   deterministic:  true
+    #   varargs:        false
+    #   call:           ( txt ) -> if ( /^\s*$/.test txt ) then 1 else 0
     #-------------------------------------------------------------------------------------------------------
     return null
 
@@ -223,8 +223,7 @@ class @Mrg
           oln     integer not null,
           trk     integer not null default 1,
           pce     integer not null default 1,
-          mat     boolean not null generated always as (
-            not #{prefix}_re_is_blank( txt ) ) virtual,     -- material, i.e. non-blank
+          mat     boolean not null generated always as ( txt != '' ) virtual, -- material, i.e. non-blank
           txt     text    not null,
         primary key ( dsk, oln, trk, pce ),
         foreign key ( dsk, oln, trk, pce ) references #{prefix}_mirror
@@ -361,7 +360,7 @@ class @Mrg
           parmirror.txt       as txt
         from #{prefix}_parmirror as parmirror
         join #{prefix}_rwnmirror as rwnmirror using ( dsk, oln, trk, pce )
-        where #{prefix}_re_is_blank( parmirror.txt )
+        where parmirror.txt == ''
         order by pars.dsk, pars.oln, pars.trk, pars.pce;"""
     #.......................................................................................................
     @db SQL"""
