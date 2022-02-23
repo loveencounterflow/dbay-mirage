@@ -224,6 +224,7 @@ class @Mrg
           trk     integer not null default 1,
           pce     integer not null default 1,
           mat     boolean not null generated always as ( txt != '' ) virtual, -- material, i.e. non-blank
+          par     boolean not null,
           txt     text    not null,
         primary key ( dsk, oln, trk, pce ),
         foreign key ( dsk, oln, trk, pce ) references #{prefix}_mirror
@@ -232,6 +233,7 @@ class @Mrg
       create index #{prefix}_raw_mirror_trk on #{prefix}_raw_mirror ( trk );
       create index #{prefix}_raw_mirror_pce on #{prefix}_raw_mirror ( pce );
       create index #{prefix}_raw_mirror_mat on #{prefix}_raw_mirror ( mat );
+      create index #{prefix}_raw_mirror_par on #{prefix}_raw_mirror ( par );
       create index #{prefix}_raw_mirror_txt on #{prefix}_raw_mirror ( txt );"""
     #.......................................................................................................
     @db SQL"""
@@ -246,7 +248,7 @@ class @Mrg
     #.......................................................................................................
     @db SQL"""
       -- Same as `mrg_rwnmirror` but only active, material lines (i.e. no lines that are deactivated
-      -- and/or blank), with PARagraph numbers added (for the technique ised here see [Gaps &
+      -- and/or blank), with PARagraph numbers added (for the technique used here see [Gaps &
       -- Islands](https://github.com/loveencounterflow/gaps-and-islands#the-gaps-and-islands-pattern).
       create view #{prefix}_parlnrs0 as select distinct
           rwnmirror.rwn - ( dense_rank() over w ) + 1   as par,
@@ -427,7 +429,7 @@ class @Mrg
       #.....................................................................................................
       insert_line_into_raw_mirror: @db.create_insert {
         into:       prefix + '_raw_mirror',
-        fields:     [ 'dsk', 'oln', 'txt', ], }
+        fields:     [ 'dsk', 'oln', 'par', 'txt', ], }
       #.....................................................................................................
       insert_trk_line: @db.create_insert {
         into:       prefix + '_mirror',
@@ -558,15 +560,22 @@ class @Mrg
         insert_line_into_mirror     = @db.prepare @sql.insert_line_into_mirror
         insert_line_into_raw_mirror = @db.prepare @sql.insert_line_into_raw_mirror
         oln                         = 0
+        par                         = 0
+        within_par                  = false
         #...................................................................................................
         for line from GUY.fs.walk_lines path, { decode: false, }
           oln++
           counts.bytes   += line.length
           txt             = line.toString 'utf-8'
           txt             = txt.trimEnd() if trim_line_ends
+          if txt is ''
+            within_par  = false
+          else unless within_par
+            within_par = true
+            par++
           ### TAINT reduce to single statement ###
           insert_line_into_mirror.run     { dsk, oln, }
-          insert_line_into_raw_mirror.run { dsk, oln, txt, }
+          insert_line_into_raw_mirror.run { dsk, oln, par, txt, }
         #...................................................................................................
         counts.files++
         @_update_digest dsk, current_digest
