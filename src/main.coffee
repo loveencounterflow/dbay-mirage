@@ -250,6 +250,7 @@ class @Mrg
           raw_mirror.dsk                                as dsk,
           min( raw_mirror.oln ) over w                  as oln1,
           max( raw_mirror.oln ) over w                  as oln2,
+          ws_linecounts.oln2                            as oln2ws,
           raw_mirror.trk                                as trk,
           raw_mirror.pce                                as pce,
           raw_mirror.par                                as par,
