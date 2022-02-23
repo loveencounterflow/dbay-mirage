@@ -270,7 +270,7 @@ class @Html
     { dsk } = cfg
     #.......................................................................................................
     @mrg.db.with_transaction =>
-      for { oln, trk, txt, } from @mrg.get_par_rows { dsk, }
+      for { oln1: oln, trk, txt, } from @mrg.get_par_rows { dsk, }
         if txt is '' ### NOTE we assume `@constructor.C.trim_line_ends == true` ###
           @_append_tag dsk, oln, trk, 'b', null, null, ''
           continue

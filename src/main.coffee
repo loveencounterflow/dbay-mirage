@@ -506,7 +506,7 @@ class @Mrg
     { dsk       } = cfg
     { prefix    } = @cfg
     @db.setv 'dsk', dsk
-    return @db SQL"select * from #{prefix}_wspars;"
+    return @db SQL"select * from #{prefix}_paragraphs;"
 
   #---------------------------------------------------------------------------------------------------------
   activate:   ( cfg ) -> @_set_active { cfg..., act: true, }
