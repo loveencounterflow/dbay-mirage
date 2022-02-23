@@ -36,3 +36,4 @@ This module has been pulled from [a preliminary version in
   **[–]** run all inserts to mirage HTML in single transaction
   **[–]** consider to add CFG to `walk_par_rows()` to indicate whether to keep or to skip empty/blank lines
   **[–]** implement datasources with direct text input
+  **[–]** in `mrg_wspars`, use field `mrg_*mirror.mat` or constant `txt = ''` instead of function call
