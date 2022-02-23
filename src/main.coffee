@@ -171,6 +171,7 @@ class @Mrg
     { prefix } = @cfg
     @db.set_foreign_keys_state false
     @db SQL"""
+      drop view   if exists _#{prefix}_ws_linecounts;
       drop view   if exists #{prefix}_paragraphs;
       drop view   if exists #{prefix}_next_free_oln;
       drop table  if exists #{prefix}_raw_mirror;
@@ -227,8 +228,24 @@ class @Mrg
       create index #{prefix}_raw_mirror_txt on #{prefix}_raw_mirror ( txt );"""
     #.......................................................................................................
     @db SQL"""
-      -- needs variables 'dsk'
-      -- same as `pars` but with whitespace after each paragraph where applicable
+      create view _#{prefix}_ws_linecounts as select distinct
+          raw_mirror.dsk                                as dsk,
+          min( raw_mirror.oln ) over w                  as oln1,
+          max( raw_mirror.oln ) over w                  as oln2,
+          raw_mirror.trk                                as trk,
+          raw_mirror.pce                                as pce,
+          raw_mirror.par                                as par,
+          count( * ) over w                             as wslc -- white space line count
+        from #{prefix}_raw_mirror as raw_mirror
+        join #{prefix}_mirror     as mirror using ( dsk, oln, trk, pce )
+        where mirror.act and not raw_mirror.mat
+        window w as (
+          partition by raw_mirror.par
+          order by mirror.dsk, mirror.oln, mirror.trk, mirror.pce
+          range between unbounded preceding and unbounded following )
+        order by mirror.dsk, mirror.oln, mirror.trk, mirror.pce;"""
+    #.......................................................................................................
+    @db SQL"""
       create view #{prefix}_paragraphs as select distinct
           raw_mirror.dsk                                as dsk,
           min( raw_mirror.oln ) over w                  as oln1,
@@ -236,10 +253,12 @@ class @Mrg
           raw_mirror.trk                                as trk,
           raw_mirror.pce                                as pce,
           raw_mirror.par                                as par,
+          ws_linecounts.wslc                            as wslc,
           group_concat( raw_mirror.txt, '\n' ) over w   as txt
-        from #{prefix}_raw_mirror as raw_mirror
-        join #{prefix}_mirror     as mirror using ( dsk, oln, trk, pce )
-        where raw_mirror.mat
+        from #{prefix}_raw_mirror     as raw_mirror
+        join #{prefix}_mirror         as mirror         using ( dsk, oln, trk, pce )
+        join _#{prefix}_ws_linecounts as ws_linecounts  using ( dsk, trk, pce, par )
+        where mirror.act and raw_mirror.mat
         window w as (
           partition by raw_mirror.par
           order by mirror.dsk, mirror.oln, mirror.trk, mirror.pce
