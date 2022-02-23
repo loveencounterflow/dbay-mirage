@@ -261,7 +261,7 @@ class @Html
       for k, v of atrs
         v = rpr v unless isa.text v
         @statements.insert_atr.run { atrid, k, v, }
-    return @mrg.db.first_row @statements.insert_content, { dsk, oln, trk, typ, tag, atrid, txt: text, }
+    return @statements.insert_content.get { dsk, oln, trk, typ, tag, atrid, txt: text, }
 
   #---------------------------------------------------------------------------------------------------------
   parse_dsk: ( cfg ) ->
