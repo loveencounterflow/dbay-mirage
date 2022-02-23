@@ -97,6 +97,7 @@ class @Html
     @types.validate.constructor_cfg @cfg
     { mrg, }  = GUY.obj.pluck_with_fallback @cfg, null, 'mrg'
     GUY.props.hide @, 'mrg', mrg
+    GUY.props.hide @, 'HTMLISH', HTMLISH
     @cfg      = GUY.lft.freeze @cfg
     @_set_variables?()
     @_create_sql_functions?()
@@ -273,7 +274,7 @@ class @Html
         if txt is '' ### NOTE we assume `@constructor.C.trim_line_ends == true` ###
           @_append_tag dsk, oln, trk, 'b', null, null, ''
           continue
-        tokens = HTMLISH.parse txt
+        tokens = @HTMLISH.parse txt
         for d in tokens
           switch d.$key
             when '<tag'     then @_append_tag dsk, oln, trk, '<', d.name, d.atrs
