@@ -28,7 +28,7 @@
   "homepage": "https://github.com/loveencounterflow/dbay-mirage#readme",
   "dependencies": {
     "cnd": "^9.2.2",
-    "guy": "4.0.0",
+    "guy": "4.1.0",
     "hdml": "^1.0.2",
     "intertext": "^8.0.0",
     "intertype": "^7.7.0",

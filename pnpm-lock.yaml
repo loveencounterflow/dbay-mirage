@@ -3,7 +3,7 @@ lockfileVersion: 5.3
 specifiers:
   cnd: ^9.2.2
   dbay: 13.0.0
-  guy: 4.0.0
+  guy: 4.1.0
   hdml: ^1.0.2
   intertext: ^8.0.0
   intertype: ^7.7.0
@@ -11,7 +11,7 @@ specifiers:
 
 dependencies:
   cnd: 9.2.2
-  guy: 4.0.0
+  guy: 4.1.0
   hdml: 1.0.2
   intertext: 8.0.0
   intertype: 7.7.0
@@ -134,6 +134,15 @@ packages:
       cnd: 9.2.2
       intertype: 7.6.7
       letsfreezethat: 3.1.0
+    dev: true
+
+  /guy/4.1.0:
+    resolution: {integrity: sha512-QXJuQQAOtoQmjAgp0f7L0zhLYVnuwPS0ODDXeNxPLJZardx9SCTvy8jOtTYXLL+LnATH2Y0XBLq32QmuNlZUqg==}
+    dependencies:
+      cnd: 9.2.2
+      intertype: 7.6.7
+      letsfreezethat: 3.1.0
+    dev: false
 
   /hdml/1.0.2:
     resolution: {integrity: sha512-hI5aUOv48mLV23Oh4WfsyMTC3U2PUAGuBza8SjuUeDyadneTByR/f9IYArGLjY1fMKoAyTtE3NnEvN9MpvD5gw==}
