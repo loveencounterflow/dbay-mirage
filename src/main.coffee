@@ -211,7 +211,11 @@ class @Mrg
         foreign key ( dsk ) references #{prefix}_datasources,
         primary key ( dsk, oln, trk, pce )
         check ( trk > 0 and floor( trk ) = trk )
-        check ( act in ( 0, 1 ) ) );"""
+        check ( act in ( 0, 1 ) ) );
+      create index #{prefix}_mirror_oln on #{prefix}_mirror ( oln );
+      create index #{prefix}_mirror_trk on #{prefix}_mirror ( trk );
+      create index #{prefix}_mirror_pce on #{prefix}_mirror ( pce );
+      create index #{prefix}_mirror_act on #{prefix}_mirror ( act );"""
     #.......................................................................................................
     @db SQL"""
       create table #{prefix}_raw_mirror (
@@ -224,7 +228,12 @@ class @Mrg
           txt     text    not null,
         primary key ( dsk, oln, trk, pce ),
         foreign key ( dsk, oln, trk, pce ) references #{prefix}_mirror
-        check ( mat in ( 0, 1 ) ) );"""
+        check ( mat in ( 0, 1 ) ) );
+      create index #{prefix}_raw_mirror_oln on #{prefix}_raw_mirror ( oln );
+      create index #{prefix}_raw_mirror_trk on #{prefix}_raw_mirror ( trk );
+      create index #{prefix}_raw_mirror_pce on #{prefix}_raw_mirror ( pce );
+      create index #{prefix}_raw_mirror_mat on #{prefix}_raw_mirror ( mat );
+      create index #{prefix}_raw_mirror_txt on #{prefix}_raw_mirror ( txt );"""
     #.......................................................................................................
     @db SQL"""
       -- Same as `mrg_mirror`, but with row numbers *for active rows*
