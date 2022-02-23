@@ -171,18 +171,8 @@ class @Mrg
     { prefix } = @cfg
     @db.set_foreign_keys_state false
     @db SQL"""
-      drop view   if exists #{prefix}_rwnmirror;
-      drop view   if exists #{prefix}_wspars;
-      drop view   if exists #{prefix}_parlnrs0;
-      drop view   if exists #{prefix}_parlnrs;
-      drop view   if exists #{prefix}_pars0;
-      drop view   if exists #{prefix}_pars;
-      -- drop view   if exists #{prefix}_lines;
-      -- drop view   if exists #{prefix}_location_from_dsk_locid;
-      -- drop view   if exists #{prefix}_prv_nxt_xtra_from_dsk_locid;
-      drop view   if exists #{prefix}_parmirror;
+      drop view   if exists #{prefix}_paragraphs;
       drop view   if exists #{prefix}_next_free_oln;
-      -- drop table  if exists #{prefix}_locs;
       drop table  if exists #{prefix}_raw_mirror;
       drop table  if exists #{prefix}_mirror;
       drop table  if exists #{prefix}_datasources;"""
@@ -237,133 +227,24 @@ class @Mrg
       create index #{prefix}_raw_mirror_txt on #{prefix}_raw_mirror ( txt );"""
     #.......................................................................................................
     @db SQL"""
-      -- Same as `mrg_mirror`, but with row numbers *for active rows*
-      create view #{prefix}_rwnmirror as select
-          row_number() over w as rwn,
-          *
-        from #{prefix}_mirror
-        where act
-        window w as ( order by dsk, oln, trk, pce )
-        order by dsk, oln, trk, pce;"""
-    #.......................................................................................................
-    @db SQL"""
-      -- Same as `mrg_rwnmirror` but only active, material lines (i.e. no lines that are deactivated
-      -- and/or blank), with PARagraph numbers added (for the technique used here see [Gaps &
-      -- Islands](https://github.com/loveencounterflow/gaps-and-islands#the-gaps-and-islands-pattern).
-      create view #{prefix}_parlnrs0 as select distinct
-          rwnmirror.rwn - ( dense_rank() over w ) + 1   as par,
-          rwnmirror.*,
-          raw_mirror.mat                                as mat,
-          raw_mirror.txt                                as txt
-        from #{prefix}_rwnmirror  as rwnmirror
-        join #{prefix}_raw_mirror as raw_mirror using ( dsk, oln, trk, pce )
-        where rwnmirror.act and raw_mirror.mat
-        window w as ( partition by rwnmirror.dsk order by rwnmirror.rwn )
-        order by rwnmirror.rwn;"""
-    #.......................................................................................................
-    @db SQL"""
-      -- First (`rwn1`) and last (`rwn2`) RoW Number of each (WS-delimited) `par`agraph.
-      create view #{prefix}_parlnrs as select
-          dsk         as dsk,
-          par         as par,
-          min( rwn )  as rwn1,
-          max( rwn )  as rwn2
-        from #{prefix}_parlnrs0
-        group by par
-        order by rwn1;"""
-    #.......................................................................................................
-    @db SQL"""
-      -- Same as `mrg_mirror` but with PARagraph numbers added.
-      create view #{prefix}_parmirror as select
-          rwnmirror.dsk                                                             as dsk,
-          rwnmirror.oln                                                             as oln,
-          rwnmirror.trk                                                             as trk,
-          rwnmirror.pce                                                             as pce,
-          rwnmirror.act                                                             as act,
-          raw_mirror.mat                                                            as mat,
-          ( select
-                parlnrs.par as par
-              from #{prefix}_parlnrs as parlnrs
-              where rwnmirror.rwn between parlnrs.rwn1 and parlnrs.rwn2 limit 1 )   as par,
-          raw_mirror.txt                                                            as txt
-        from #{prefix}_rwnmirror  as rwnmirror
-        join #{prefix}_raw_mirror as raw_mirror using ( oln, trk, pce )
-        order by rwn;"""
-    # #.......................................................................................................
-    # @db SQL"""
-    #   -- needs variables 'dsk'
-    #   create view #{prefix}_lines as select distinct
-    #       r1.dsk                                              as dsk,
-    #       r1.rwn                                              as rwn,
-    #       r1.oln                                              as oln,
-    #       r1.par                                              as par,
-    #       coalesce( group_concat( r1.txt, '' ) over w, '' )   as txt
-    #     from #{prefix}_parmirror as r1
-    #     where true
-    #       and ( r1.dsk = std_getv( 'dsk' ) )
-    #       and ( r1.act )
-    #     window w as (
-    #       partition by r1.oln
-    #       order by r1.oln, r1.trk, r1.pce
-    #       range between unbounded preceding and unbounded following );"""
-    #.......................................................................................................
-    @db SQL"""
-      -- needs variables 'dsk'
-      create view #{prefix}_pars0 as select distinct
-          parmirror.dsk                                                                    as dsk,
-          parlnrs.rwn1                                                                     as rwn1,
-          parlnrs.rwn2                                                                     as rwn2,
-          parmirror.par                                                                    as par,
-          coalesce( group_concat( parmirror.txt, char( 10 ) ) over w, '' ) || char( 10 )   as txt
-        from #{prefix}_parmirror  as parmirror
-        join #{prefix}_parlnrs    as parlnrs using ( dsk, par )
-        -- join #{prefix}_raw_mirror as r3 using ( oln, trk, pce )
-        where true
-          and ( parmirror.dsk = std_getv( 'dsk' ) )
-          and ( parmirror.act )
-        window w as (
-          partition by parmirror.par
-          order by parmirror.oln, parmirror.trk, parmirror.pce
-          range between unbounded preceding and unbounded following );"""
-    #.......................................................................................................
-    @db SQL"""
-      -- needs variables 'dsk'
-      create view #{prefix}_pars as select
-          pars0.dsk         as dsk,
-          parlnrs01.oln     as oln,
-          parlnrs01.trk     as trk,
-          parlnrs01.pce     as pce,
-          parlnrs02.oln     as oln2,
-          pars0.rwn1        as rwn1,
-          pars0.rwn2        as rwn2,
-          pars0.par         as par,
-          pars0.txt         as txt
-        from #{prefix}_pars0      as pars0
-        join #{prefix}_parlnrs0   as parlnrs01 on ( parlnrs01.rwn = pars0.rwn1 )
-        join #{prefix}_parlnrs0   as parlnrs02 on ( parlnrs02.rwn = pars0.rwn2 )
-        order by pars0.dsk, pars0.rwn1;"""
-    #.......................................................................................................
-    @db SQL"""
       -- needs variables 'dsk'
       -- same as `pars` but with whitespace after each paragraph where applicable
-      create view #{prefix}_wspars as select
-          pars.*
-        from #{prefix}_pars   as pars
-      union all
-        select
-          parmirror.dsk       as dsk,
-          parmirror.oln       as oln,
-          parmirror.trk       as trk,
-          parmirror.pce       as pce,
-          parmirror.oln       as oln2,
-          rwnmirror.rwn       as rwn1,
-          rwnmirror.rwn       as rwn2,
-          parmirror.par       as par,
-          parmirror.txt       as txt
-        from #{prefix}_parmirror as parmirror
-        join #{prefix}_rwnmirror as rwnmirror using ( dsk, oln, trk, pce )
-        where parmirror.txt == ''
-        order by pars.dsk, pars.oln, pars.trk, pars.pce;"""
+      create view #{prefix}_paragraphs as select distinct
+          raw_mirror.dsk                                as dsk,
+          min( raw_mirror.oln ) over w                  as oln1,
+          max( raw_mirror.oln ) over w                  as oln2,
+          raw_mirror.trk                                as trk,
+          raw_mirror.pce                                as pce,
+          raw_mirror.par                                as par,
+          group_concat( raw_mirror.txt, '\n' ) over w   as txt
+        from #{prefix}_raw_mirror as raw_mirror
+        join #{prefix}_mirror     as mirror using ( dsk, oln, trk, pce )
+        where raw_mirror.mat
+        window w as (
+          partition by raw_mirror.par
+          order by mirror.dsk, mirror.oln, mirror.trk, mirror.pce
+          range between unbounded preceding and unbounded following )
+        order by mirror.dsk, mirror.oln, mirror.trk, mirror.pce;"""
     #.......................................................................................................
     @db SQL"""
       create view #{prefix}_next_free_oln as select
