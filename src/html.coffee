@@ -269,7 +269,7 @@ class @Html
     { dsk } = cfg
     #.......................................................................................................
     @mrg.db.with_transaction =>
-      for { oln1: oln, wslc, trk, txt, } from @mrg.get_par_rows { dsk, }
+      for { oln1: oln, wslc, trk, txt, } from @mrg.walk_par_rows { dsk, }
         tokens = @HTMLISH.parse txt
         for d in tokens
           switch d.$key
