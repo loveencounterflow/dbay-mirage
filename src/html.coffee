@@ -51,7 +51,6 @@ class Htmlish
     tokens    = _HTMLISH.parse text
     R         = lets tokens, ( tokens ) =>
       for d, idx in tokens
-        # warn '^44564976^', d if d.$key is '^error'
         if ( d.$key is '<tag' )
           if ( d.type is 'otag' )
             if ( /^<\s+/.test d.text )
