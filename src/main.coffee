@@ -506,8 +506,7 @@ class @Mrg
     { dsk       } = cfg
     { prefix    } = @cfg
     @db.setv 'dsk', dsk
-    return ( @db.sqlt2.prepare SQL"select * from #{prefix}_paragraphs;" ).iterate()
-    # return @db SQL"select * from #{prefix}_paragraphs;"
+    return @db.alt SQL"select * from #{prefix}_paragraphs;"
 
   #---------------------------------------------------------------------------------------------------------
   activate:   ( cfg ) -> @_set_active { cfg..., act: true, }
