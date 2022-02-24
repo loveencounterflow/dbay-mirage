@@ -2,7 +2,7 @@ lockfileVersion: 5.3
 
 specifiers:
   cnd: ^9.2.2
-  dbay: 13.0.0
+  dbay: 14.0.0
   guy: 4.1.0
   hdml: ^1.0.2
   intertext: ^8.0.0
@@ -18,7 +18,7 @@ dependencies:
   paragate: 4.0.0
 
 devDependencies:
-  dbay: 13.0.0
+  dbay: 14.0.0
 
 packages:
 
@@ -90,8 +90,8 @@ packages:
       multimix: 5.0.0
     dev: false
 
-  /dbay/13.0.0:
-    resolution: {integrity: sha512-1e9/U3YM/G0hvTWv/sHXkPcX/w4wGsFmK/YrnJ5ovEp9ghlWJNr5S1aFnI+2QaXD2MBI/8zuqbxxEsYdwkDavw==}
+  /dbay/14.0.0:
+    resolution: {integrity: sha512-5WwHoYnn0f+XCEPOqfFAgYERqZGdPz7LPxPzDaJg+xOA1/W1BJKKGUhXvSJvbRZLlyEaCbGly9OJ68oHs3A1jg==}
     requiresBuild: true
     dependencies:
       cnd: 9.2.2
