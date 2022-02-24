@@ -277,9 +277,10 @@ class @Html
             when '>tag'     then @_append_tag dsk, oln, trk, '>', d.name, d.atrs
             when '^tag'     then @_append_tag dsk, oln, trk, '^', d.name, d.atrs
             when '^text'    then @_append_tag dsk, oln, trk, 't', null, null, d.text
-            when '^comment'
+            when '^comment', '^doctype'
               @_append_tag dsk, oln, trk, 'r', null, null, d.text.replace /^<!--\s*(.*?)\s*-->$/, '$1'
             when '^error'
+              warn '^435345^', "error #{rpr d}"
               atrs = { start: d.start, stop: d.stop, code: d.code, }
               @_append_tag dsk, oln, trk, 'e', null, atrs, "#{d.message}: #{rpr d.text}"
             else
