@@ -29,6 +29,7 @@ This module has been pulled from [a preliminary version in
     system paths
 * HTML:
   **[+]** empty lines between paragraphs should be preserved
+  **[–]** initial blank lines are missing from HTML output
   **[–]** what to do for trailing blank lines?
   **[–]** tag registry so we can decide whether tag
     * is block
