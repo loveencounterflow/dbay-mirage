@@ -23,20 +23,24 @@
   <n/room/ <adv/full/ <prep/of/ <n/thoughts/`
 
 * OK:
-	* `<title>My Page</title>`: ordinary tag
-	* `<title/>`: any tag can be left empty (as per the syntax; semantics may still cause error)
-	* `<title/My Page/`: content allowed in Null End Tags
-	* `<title/My\/Your Page/`: slashes must be escaped in Null End Tags
-	* `<title/My⏎Page/`: line break allowed in Null End Tags
-	* `<title k=v j=w/My Page/`: Null End Tags can have attributes
-	* `<title//`: empty content allowed in Null End Tags
+  * `<title>My Page</title>`: ordinary tag
+  * `<title/>`: any tag can be left empty (as per the syntax; semantics may still cause error)
+  * `<title/My Page/`: content allowed in Null End Tags
+  * `<title/My\/Your Page/`: slashes must be escaped in Null End Tags
+  * `<title/My⏎Page/`: line break allowed in Null End Tags
+  * `<title k=v j=w/My Page/`: Null End Tags can have attributes
+  * `<title//`: empty content allowed in Null End Tags
 
 * Not OK
-	* `<title/<b>My</b> Page/`: nesting tags not allowed inside Null End Tags
+  * `<title/<b>My</b> Page/`: nesting tags not allowed inside Null End Tags
 
 * Likely a Mistake
-	* `<title/My Page/>`: right pointy bracket not part of markup
+  * `<title/My Page/>`: right pointy bracket not part of markup
 
-
+* Observe that
+  * in HTMLish, both `<title//` and `<title/>` are equivalent to `<title></title>`
+  * tags declared to be 'empty' can be written both with and without closing slash (`<br>` and `<br/>` are
+    equivalent)
+  * any tag without content can be written in its short form, so e.g. `<div/>` is allowed (as is `<div//`)
 
 
