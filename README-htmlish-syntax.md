@@ -19,8 +19,8 @@
 
 * HTMLish allows [SGML Null End Tag
   syntax](https://en.wikipedia.org/wiki/Standard_Generalized_Markup_Language#NET) which allows for neat
-  notations without requiring another syntax, e.g. `<entry/house, the/ <german/Haus, das/ <french/maison,
-  la/`
+  notations without requiring users to invent a new syntax for the purpose, e.g. `<entry/house, the/
+  <german/Haus, das/ <french/maison, la/`
 
 * OK:
 	* `<title>My Page</title>`: ordinary tag
