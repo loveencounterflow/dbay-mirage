@@ -8,6 +8,7 @@ specifiers:
   intertext: ^8.0.0
   intertype: ^7.7.0
   paragate: 4.0.0
+  timetunnel: ^1.1.1
 
 dependencies:
   cnd: 9.2.2
@@ -16,6 +17,7 @@ dependencies:
   intertext: 8.0.0
   intertype: 7.7.0
   paragate: 4.0.0
+  timetunnel: 1.1.1
 
 devDependencies:
   dbay: 14.0.0
@@ -267,6 +269,14 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       ansi-regex: 5.0.1
+    dev: false
+
+  /timetunnel/1.1.1:
+    resolution: {integrity: sha512-c8QMxTfNDawaQzrA6U2MIheqK/r3GkvNsnEiCQvLSddSfanynYRvRvViioIL6XTsIOWJrdL+ZoyGPx9GgUjgQA==}
+    dependencies:
+      cnd: 9.2.1
+      intertype: 7.6.5
+      multimix: 5.0.0
     dev: false
 
   /timsort/0.3.0:
