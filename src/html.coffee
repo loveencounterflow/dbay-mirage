@@ -54,7 +54,8 @@ class Htmlish
     guards    = '¥₽₨฿₮'
     intalph   = '0123456789'
     tnl       = new TIMETUNNEL.Timetunnel { guards, intalph, }
-    tnl.add_tunnel TIMETUNNEL.tunnels.remove_backslash
+    tnl.add_tunnel TIMETUNNEL.tunnels.keep_backslash
+    # tnl.add_tunnel TIMETUNNEL.tunnels.remove_backslash
     text      = tnl.hide text
     return { text, reveal: ( tnl.reveal.bind tnl ), }
 
@@ -92,6 +93,11 @@ class Htmlish
           if ( /(?<!\\)[<&]/.test d.text )
             @_as_error d, '^ð1^', 'bareachrs', "bare active characters"
           d.text = reveal d.text
+          d.text = d.text.replace /\\</g,     '&lt;'
+          d.text = d.text.replace /\\&/g,     '&amp;'
+          d.text = d.text.replace /\\(.)/ug,  '$1'
+          # d.text = d.text.replace /\\([^\\])/ug, '$1'
+          # d.text = d.text.replace /\\\\/g, '\\'
       #.....................................................................................................
       return null
     return R
