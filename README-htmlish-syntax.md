@@ -19,8 +19,8 @@
 
 * HTMLish allows [SGML Null End Tag
   syntax](https://en.wikipedia.org/wiki/Standard_Generalized_Markup_Language#NET) which allows for neat
-  notations without requiring users to invent a new syntax for the purpose, e.g. `<entry/house, the/
-  <german/Haus, das/ <french/maison, la/`
+  notations without requiring users to invent a new syntax for the purpose, e.g. `<art/an/ <adj/empty/
+  <n/room/ <adv/full/ <prep/of/ <n/thoughts/`
 
 * OK:
 	* `<title>My Page</title>`: ordinary tag
@@ -33,6 +33,8 @@
 
 * Not OK
 	* `<title/<b>My</b> Page/`: nesting tags not allowed inside Null End Tags
+
+* Likely a Mistake
 	* `<title/My Page/>`: right pointy bracket not part of markup
 
 
