@@ -1,15 +1,20 @@
+
+
+# 𓆤DBay 𓁛Mirage HTMLish Syntax
+
+
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [HTMLish Syntax](#htmlish-syntax)
+- [𓆤DBay 𓁛Mirage HTMLish Syntax](#%F0%93%86%A4dbay-%F0%93%81%9Bmirage-htmlish-syntax)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 
 
-
-# HTMLish Syntax
+# 𓆤DBay 𓁛Mirage HTMLish Syntax
 
 * OK:
 	* `<title>My Page</title>`: ordinary tag
