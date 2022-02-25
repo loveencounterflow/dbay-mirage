@@ -26,6 +26,7 @@ GUY                       = require 'guy'
 _HTMLISH                  = ( require 'paragate/lib/htmlish.grammar' ).new_grammar { bare: true, }
 { lets
   freeze }                = GUY.lft
+TIMETUNNEL                = require 'timetunnel'
 
 
 #===========================================================================================================
@@ -47,21 +48,51 @@ class Htmlish
   #   return undefined
 
   #---------------------------------------------------------------------------------------------------------
+  _tunnel: ( text ) ->
+    # guards    = 'äöüßp'
+    # guards    = '①②③④⑤'
+    guards    = '¥₽₨฿₮'
+    intalph   = '0123456789'
+    tnl       = new TIMETUNNEL.Timetunnel { guards, intalph, }
+    tnl.add_tunnel TIMETUNNEL.tunnels.remove_backslash
+    text      = tnl.hide text
+    return { text, reveal: ( tnl.reveal.bind tnl ), }
+
+  #---------------------------------------------------------------------------------------------------------
   parse: ( text ) ->
-    tokens    = _HTMLISH.parse text
-    R         = lets tokens, ( tokens ) =>
+    { text
+      reveal  } = @_tunnel text
+    tokens      = _HTMLISH.parse text
+    stack       = []
+    #.......................................................................................................
+    R           = lets tokens, ( tokens ) =>
+      #.....................................................................................................
       for d, idx in tokens
+        #...................................................................................................
         if ( d.$key is '<tag' )
-          if ( d.type is 'otag' )
-            if ( /^<\s+/.test d.text )
-              @_as_error d, '^ð1^', 'xtraows', "extraneous whitespace before tag name"
+          if ( d.type is 'otag' ) and ( /^<\s+/.test d.text )
+            @_as_error d, '^ð1^', 'xtraows', "extraneous whitespace before tag name"
+          stack.push d
+        #...................................................................................................
         else if ( d.$key is '>tag' )
-          if ( d.type is 'ctag' )
-            if( /^<\s*\/\s+/.test d.text ) or ( /^<\s+\/\s*/.test d.text )
-              @_as_error d, '^ð2^', 'xtracws', "extraneous whitespace in closing tag"
+          if ( d.type is 'ctag' ) and ( ( /^<\s*\/\s+/.test d.text ) or ( /^<\s+\/\s*/.test d.text ) )
+            @_as_error d, '^ð2^', 'xtracws', "extraneous whitespace in closing tag"
+          if stack.length is 0
+            @_as_error d, '^ð2^', 'xtractag', "extraneous closing tag </#{d.name}>"
+          else
+            # debug '^538457^', stack
+            matching_d = stack.pop()
+            if d.name?
+              if ( d.name != matching_d.name )
+                @_as_error d, '^ð2^', 'nomatch', "expected </#{matching_d.name}>, got </#{d.name}>"
+            else
+              d.name = matching_d.name
+        #...................................................................................................
         else if ( d.$key is '^text' )
           if ( /(?<!\\)[<&]/.test d.text )
             @_as_error d, '^ð1^', 'bareachrs', "bare active characters"
+          d.text = reveal d.text
+      #.....................................................................................................
       return null
     return R
 
