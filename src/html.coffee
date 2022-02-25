@@ -256,11 +256,13 @@ class @Html
     { db      } = @mrg
     #.......................................................................................................
     GUY.props.hide @, 'statements',
-      insert_atrid:      db.prepare_insert {
+      #.....................................................................................................
+      insert_atrid: db.prepare_insert {
         into: "#{prefix}_html_atrids", returning: '*', exclude: [ 'atrid', ], }
+      #.....................................................................................................
       ### NOTE we don't use `autoincrement` b/c this is the more general solution; details will change when
       the VNR gets more realistic (dsk, linenr, ...) ###
-      insert_content:    db.prepare SQL"""
+      insert_content: db.prepare SQL"""
         with v1 as ( select
             coalesce( max( pce ), 0 ) + 1 as pce
           from #{prefix}_html_mirror
@@ -271,7 +273,8 @@ class @Html
         insert into #{prefix}_html_mirror ( dsk, oln, trk, pce, typ, tag, atrid, txt )
           values ( $dsk, $oln, $trk, ( select pce from v1 ), $typ, $tag, $atrid, $txt )
           returning *;"""
-      insert_atr:        db.prepare_insert { into: "#{prefix}_html_atrs",         returning: null, }
+      #.....................................................................................................
+      insert_atr: db.prepare_insert { into: "#{prefix}_html_atrs", returning: null, }
       insert_tag: db.prepare_insert { into: "#{prefix}_html_tags", returning: null, }
     #.......................................................................................................
     return null
