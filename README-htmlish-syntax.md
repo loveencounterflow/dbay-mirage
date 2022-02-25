@@ -16,6 +16,12 @@
 
 # 𓆤DBay 𓁛Mirage HTMLish Syntax
 
+
+* HTMLish allows [SGML Null End Tag
+  syntax](https://en.wikipedia.org/wiki/Standard_Generalized_Markup_Language#NET) which allows for neat
+  notations without requiring another syntax, e.g. `<entry/house, the/ <german/Haus, das/ <french/maison,
+  la/`
+
 * OK:
 	* `<title>My Page</title>`: ordinary tag
 	* `<title/>`: any tag can be left empty (as per the syntax; semantics may still cause error)
@@ -24,6 +30,7 @@
 	* `<title/My⏎Page/`: line break allowed in Null End Tags
 	* `<title k=v j=w/My Page/`: Null End Tags can have attributes
 	* `<title//`: empty content allowed in Null End Tags
+
 * Not OK
 	* `<title/<b>My</b> Page/`: nesting tags not allowed inside Null End Tags
 	* `<title/My Page/>`: right pointy bracket not part of markup
