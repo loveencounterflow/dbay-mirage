@@ -102,6 +102,7 @@ class @Html
     @_create_sql_functions?()
     @_procure_infrastructure?()
     @_compile_statements?()
+    @_procure_infradata?()
     return undefined
 
   #---------------------------------------------------------------------------------------------------------
@@ -143,11 +144,19 @@ class @Html
     db SQL"""
       drop  index if exists #{prefix}_html_mirror_tag_idx;
       drop  view  if exists #{prefix}_html_tags_and_html;
+      drop  table if exists #{prefix}_html_tags;
       drop  table if exists #{prefix}_html_typs;
       drop  table if exists #{prefix}_html_atrs;
       drop  table if exists #{prefix}_html_mirror;
       drop  table if exists #{prefix}_html_atrids;"""
     db.set_foreign_keys_state true
+    #-------------------------------------------------------------------------------------------------------
+    db SQL"""
+      create table #{prefix}_html_tags (
+          tag       text    not null primary key,
+          is_block  boolean not null default false,
+          is_empty  boolean not null default false,
+          syntax    text    not null default 'html' );"""
     #-------------------------------------------------------------------------------------------------------
     db SQL"""
       create table #{prefix}_html_atrids (
@@ -221,6 +230,27 @@ class @Html
     return null
 
   #---------------------------------------------------------------------------------------------------------
+  _procure_infradata: ->
+    ### TAINT skip if tables found ###
+    { prefix      } = @cfg
+    { db          } = @mrg
+    { insert_tag  } = @statements
+    #.......................................................................................................
+    db =>
+      try
+        for d in ( require './data-html5-tags' ).tags
+          tag       = d.tag
+          is_empty  = if d.is_empty then 1 else 0
+          is_block  = if d.is_block then 1 else 0
+          syntax    = d.syntax ? 'html'
+          insert_tag.run { tag, is_empty, is_block, syntax, }
+      catch error
+        throw new db.E.DBay_internal_error '^mirage-html@1^', \
+          "when trying to insert #{rpr d}, an error occurred: #{error.message}"
+    #.......................................................................................................
+    return null
+
+  #---------------------------------------------------------------------------------------------------------
   _compile_statements: ->
     { prefix  } = @cfg
     { db      } = @mrg
@@ -242,6 +272,7 @@ class @Html
           values ( $dsk, $oln, $trk, ( select pce from v1 ), $typ, $tag, $atrid, $txt )
           returning *;"""
       insert_atr:        db.prepare_insert { into: "#{prefix}_html_atrs",         returning: null, }
+      insert_tag: db.prepare_insert { into: "#{prefix}_html_tags", returning: null, }
     #.......................................................................................................
     return null
 
