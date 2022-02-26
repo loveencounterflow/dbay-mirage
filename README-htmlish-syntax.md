@@ -9,6 +9,7 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [𓆤DBay 𓁛Mirage HTMLish Syntax](#%F0%93%86%A4dbay-%F0%93%81%9Bmirage-htmlish-syntax)
+  - [To Do](#to-do)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -42,5 +43,21 @@
   * tags declared to be 'empty' can be written both with and without closing slash (`<br>` and `<br/>` are
     equivalent)
   * any tag without content can be written in its short form, so e.g. `<div/>` is allowed (as is `<div//`)
+
+
+## To Do
+
+* **[–]** consider to prefer `<tag/content/>` over `<tag/content/` because then pointy brackets remain
+  balanced
+* **[–]** consider to allow to use several slashes or other punctuation to make it possible for any content
+  to appear without escapes, e.g. instead of `<url/https:\/\/en.wikipedia.org\/wiki\//>` one could write
+  `<url°°°https://en.wikipedia.org/wiki/°°°>` (or `<url°°°https://en.wikipedia.org/wiki/°°°` as the case may
+  be).
+* **[–]** implement parsing of XNCRs (`&xy;`, `&#123;`, `&#x1a3;`, `&jzr#x1a3;`)
+* **[–]** unify output for Empty Tags ( `<t/>`, `<t//`, `<t></t>`)
+* **[–]** make it a syntax error to use closing tags for tags that are empty by definition, so `<br>` is
+  legal and means the same as `<br/>` and `<br//`, but `</br>` causes an error.
+  * **[–]** distinguish between Empty Tags and tags that happen to have no content (zero content tags?)
+
 
 
