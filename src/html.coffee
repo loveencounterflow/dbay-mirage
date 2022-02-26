@@ -39,9 +39,21 @@ types.declare 'mrg_parse_dsk_cfg', tests:
   "@isa.object x":                                    ( x ) -> @isa.object x
   "@isa.nonempty_text x.dsk":                         ( x ) -> @isa.nonempty_text x.dsk
 
+#===========================================================================================================
+xncr          = {}
+xncr.nameG    = ( ///     (?<name>      [a-z][a-z0-9]* )       /// ).source
+xncr.nameOG   = ( /// (?: (?<csg>   (?: [a-z][a-z0-9]* ) ) | ) /// ).source
+xncr.hexG     = ( /// (?:     x  (?<hex> [a-fA-F0-9]+ )      ) /// ).source
+xncr.decG     = ( ///            (?<dec> [      0-9]+ )        /// ).source
+xncr.matcher  = /// & #{xncr.nameG} ; | & #{xncr.nameOG} \# (?: #{xncr.hexG} | #{xncr.decG} ) ; ///g
+
 
 #===========================================================================================================
 class Htmlish
+
+  #---------------------------------------------------------------------------------------------------------
+  C: GUY.lft.freeze
+    xncr: xncr
 
   # #---------------------------------------------------------------------------------------------------------
   # constructor: ->
@@ -58,6 +70,11 @@ class Htmlish
     # tnl.add_tunnel TIMETUNNEL.tunnels.remove_backslash
     text      = tnl.hide text
     return { text, reveal: ( tnl.reveal.bind tnl ), }
+
+  #---------------------------------------------------------------------------------------------------------
+  _parse_xncrs: ( text ) ->
+    parts = []
+    # for match
 
   #---------------------------------------------------------------------------------------------------------
   parse: ( text ) ->
