@@ -25,7 +25,8 @@ GUY                       = require 'guy'
 { HDML }                  = require 'hdml'
 _HTMLISH                  = ( require 'paragate/lib/htmlish.grammar' ).new_grammar { bare: true, }
 { lets
-  freeze }                = GUY.lft
+  freeze
+  thaw }                  = GUY.lft
 TIMETUNNEL                = require 'timetunnel'
 
 
@@ -80,43 +81,47 @@ class Htmlish
   parse: ( text ) ->
     { text
       reveal  } = @_tunnel text
-    tokens      = _HTMLISH.parse text
+    tokens      = thaw _HTMLISH.parse text
     stack       = []
+    R           = []
     #.......................................................................................................
-    R           = lets tokens, ( tokens ) =>
+    for d, idx in tokens
       #.....................................................................................................
-      for d, idx in tokens
-        #...................................................................................................
-        if ( d.$key is '<tag' )
-          if ( d.type is 'otag' ) and ( /^<\s+/.test d.text )
-            @_as_error d, '^ð1^', 'xtraows', "extraneous whitespace before tag name"
-          stack.push d
-        #...................................................................................................
-        else if ( d.$key is '>tag' )
-          if ( d.type is 'ctag' ) and ( ( /^<\s*\/\s+/.test d.text ) or ( /^<\s+\/\s*/.test d.text ) )
-            @_as_error d, '^ð2^', 'xtracws', "extraneous whitespace in closing tag"
-          if stack.length is 0
-            @_as_error d, '^ð2^', 'xtractag', "extraneous closing tag </#{d.name}>"
-          else
-            # debug '^538457^', stack
-            matching_d = stack.pop()
-            if d.name?
-              if ( d.name != matching_d.name )
-                @_as_error d, '^ð2^', 'nomatch', "expected </#{matching_d.name}>, got </#{d.name}>"
-            else
-              d.name = matching_d.name
-        #...................................................................................................
-        else if ( d.$key is '^text' )
-          if ( /(?<!\\)[<&]/.test d.text )
-            @_as_error d, '^ð1^', 'bareachrs', "bare active characters"
-          d.text = reveal d.text
-          d.text = d.text.replace /\\</g,     '&lt;'
-          d.text = d.text.replace /\\&/g,     '&amp;'
-          d.text = d.text.replace /\\(.)/ug,  '$1'
-          # d.text = d.text.replace /\\([^\\])/ug, '$1'
-          # d.text = d.text.replace /\\\\/g, '\\'
+      if ( d.$key is '<tag' )
+        if ( d.type is 'otag' ) and ( /^<\s+/.test d.text )
+          @_as_error d, '^ð1^', 'xtraows', "extraneous whitespace before tag name"
+        stack.push d
+        R.push d; continue
       #.....................................................................................................
-      return null
+      if ( d.$key is '>tag' )
+        if ( d.type is 'ctag' ) and ( ( /^<\s*\/\s+/.test d.text ) or ( /^<\s+\/\s*/.test d.text ) )
+          @_as_error d, '^ð2^', 'xtracws', "extraneous whitespace in closing tag"
+          R.push d; continue
+        if stack.length is 0
+          @_as_error d, '^ð2^', 'xtractag', "extraneous closing tag </#{d.name}>"
+          R.push d; continue
+        # debug '^538457^', stack
+        matching_d = stack.pop()
+        if d.name?
+          if ( d.name != matching_d.name )
+            @_as_error d, '^ð2^', 'nomatch', "expected </#{matching_d.name}>, got </#{d.name}>"
+            R.push d; continue
+        else
+          d.name = matching_d.name
+        R.push d; continue
+      #.....................................................................................................
+      if ( d.$key is '^text' )
+        if ( /(?<!\\)[<&]/.test d.text )
+          @_as_error d, '^ð1^', 'bareachrs', "bare active characters"
+        d.text = reveal d.text
+        d.text = d.text.replace /\\</g,     '&lt;'
+        d.text = d.text.replace /\\&/g,     '&amp;'
+        d.text = d.text.replace /\\(.)/ug,  '$1'
+        R.push d; continue
+        # d.text = d.text.replace /\\([^\\])/ug, '$1'
+        # d.text = d.text.replace /\\\\/g, '\\'
+      #.....................................................................................................
+      R.push d; continue
     return R
 
   #---------------------------------------------------------------------------------------------------------
