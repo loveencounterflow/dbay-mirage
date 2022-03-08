@@ -2,11 +2,12 @@ lockfileVersion: 5.3
 
 specifiers:
   cnd: ^9.2.2
-  dbay: 14.0.0
+  dbay: 14.1.0
   guy: 4.1.0
   hdml: ^1.0.2
   intertext: ^8.0.0
   intertype: ^7.7.0
+  moonriver: 0.0.1
   paragate: 4.0.0
   timetunnel: ^1.1.1
 
@@ -16,11 +17,12 @@ dependencies:
   hdml: 1.0.2
   intertext: 8.0.0
   intertype: 7.7.0
+  moonriver: 0.0.1
   paragate: 4.0.0
   timetunnel: 1.1.1
 
 devDependencies:
-  dbay: 14.0.0
+  dbay: 14.1.0
 
 packages:
 
@@ -92,8 +94,8 @@ packages:
       multimix: 5.0.0
     dev: false
 
-  /dbay/14.0.0:
-    resolution: {integrity: sha512-5WwHoYnn0f+XCEPOqfFAgYERqZGdPz7LPxPzDaJg+xOA1/W1BJKKGUhXvSJvbRZLlyEaCbGly9OJ68oHs3A1jg==}
+  /dbay/14.1.0:
+    resolution: {integrity: sha512-Ae+eBReebhXnpZjIEVo0bHLh/xOyuCtQzPk+PEXmYC6b9pu+HocYC0Ca4PCLyHEci1k1lySb4RBcZcralFmdTg==}
     requiresBuild: true
     dependencies:
       cnd: 9.2.2
@@ -216,6 +218,14 @@ packages:
 
   /letsfreezethat/3.1.0:
     resolution: {integrity: sha512-jJ1nvvQi6unW0WifjNPMIb64Byom0EXzSKWFYA++EpyjK3qv1J2pqeSoEJ61tGJoNG0GoNjPoeLYhxW16riZaA==}
+
+  /moonriver/0.0.1:
+    resolution: {integrity: sha512-DL2+P/vVTnKjf8A6LIqwz4Q0N7J6b5bbSN0VB6rHVDh+Euh/EAXgdVhVO8LbFe+3W6QVz+qUGpUX5UpXwHF/QA==}
+    dependencies:
+      cnd: 9.2.2
+      guy: 4.1.0
+      intertype: 7.7.0
+    dev: false
 
   /multimix/5.0.0:
     resolution: {integrity: sha512-N9cdGSDDD7kxOV7R6e4iZqsHTZ4F4iiSDWqMcVqx4gEH6HBtRXav39Gj3fgT1YqvBcwPCQuf0Oa5R2cDaLWK8A==}

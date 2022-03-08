@@ -32,11 +32,12 @@
     "hdml": "^1.0.2",
     "intertext": "^8.0.0",
     "intertype": "^7.7.0",
+    "moonriver": "0.0.1",
     "paragate": "4.0.0",
     "timetunnel": "^1.1.1"
   },
   "devDependencies": {
-    "dbay": "14.0.0"
+    "dbay": "14.1.0"
   },
   "peerDependencies": {
     "dbay": "^10.121.1"
