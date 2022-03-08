@@ -132,30 +132,54 @@ class Htmlish
     tokens      = thaw _HTMLISH.parse text
     stack       = []
     R           = []
+    mr          = new Moonriver()
     #.......................................................................................................
     ### TAINT do not reconstruct pipeline on each run ###
-    pipeline    = []
-    pipeline.push tokens
+    mr.push tokens
+    mr.push ( d ) => urge '^357384^', d
     #.......................................................................................................
-    pipeline.push $treat_xws_in_opening_tags = ( d, send ) =>
+    mr.push $reinstate_text = ( d, send ) =>
+      return send d unless ( d.$key is '^text' )
+      d.text = reveal d.text
+      d.text = d.text.replace /\\</g,     '&lt;'
+      d.text = d.text.replace /\\&/g,     '&amp;'
+      d.text = d.text.replace /\\(.)/ug,  '$1'
+      send d
+    #.......................................................................................................
+    mr.push $treat_xws_in_opening_tags = ( d, send ) =>
       return send d unless ( d.$key is '<tag' )
       if ( d.type is 'otag' ) and ( /^<\s+/.test d.text )
         @_as_error d, '^ð1^', 'xtraows', "extraneous whitespace before tag name"
-      stack.push d
       send d
     #.......................................................................................................
-    pipeline.push $treat_xws_in_closing_tags = ( d, send ) =>
+    mr.push $treat_xws_in_closing_tags = ( d, send ) =>
       return send d unless ( d.$key is '>tag' )
       if ( d.type is 'ctag' ) and ( ( /^<\s*\/\s+/.test d.text ) or ( /^<\s+\/\s*/.test d.text ) )
         @_as_error d, '^ð2^', 'xtracws', "extraneous whitespace in closing tag"
       send d
     #.......................................................................................................
-    # pipeline.push ( d ) => urge '^357384^', d
-    pipeline.push ( d ) => R.push d
-    # debug '^409-1^', text
-    mr = new Moonriver pipeline
+    mr.push $handle_stack_open = ( d, send ) =>
+      stack.push d if ( d.$key is '<tag' ) # and ( d.type is 'ctag' )
+      send d
+    #.......................................................................................................
+    mr.push $handle_stack_close = ( d, send ) =>
+      # debug '^398^', stack
+      return send d unless ( d.$key is '>tag' )
+      #.....................................................................................................
+      if stack.length is 0
+        return send @_as_error d, '^ð2^', 'xtractag', "extraneous closing tag </#{d.name}>"
+      #.....................................................................................................
+      matching_d = stack.pop()
+      if d.name?
+        if ( d.name != matching_d.name )
+          return send @_as_error d, '^ð2^', 'nomatch', "expected </#{matching_d.name}>, got </#{d.name}>"
+      #...................................................................................................
+      else
+        d.name = matching_d.name
+      send d
+    #.......................................................................................................
+    mr.push ( d ) => R.push d
     mr.drive()
-    # debug '^409-1^', R
     #.......................................................................................................
     return R
 
@@ -166,7 +190,7 @@ class Htmlish
     token.code    = code
     token.message = message
     token.$       = ref
-    return null
+    return token
 
 #-----------------------------------------------------------------------------------------------------------
 HTMLISH = new Htmlish()
