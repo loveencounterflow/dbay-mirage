@@ -28,6 +28,7 @@ _HTMLISH                  = ( require 'paragate/lib/htmlish.grammar' ).new_gramm
   freeze
   thaw }                  = GUY.lft
 TIMETUNNEL                = require 'timetunnel'
+{ Moonriver }             = require 'moonriver'
 
 
 #===========================================================================================================
@@ -122,6 +123,40 @@ class Htmlish
         # d.text = d.text.replace /\\\\/g, '\\'
       #.....................................................................................................
       R.push d; continue
+    return R
+
+  #---------------------------------------------------------------------------------------------------------
+  parse2: ( text ) ->
+    { text
+      reveal  } = @_tunnel text
+    tokens      = thaw _HTMLISH.parse text
+    stack       = []
+    R           = []
+    #.......................................................................................................
+    ### TAINT do not reconstruct pipeline on each run ###
+    pipeline    = []
+    pipeline.push tokens
+    #.......................................................................................................
+    pipeline.push $treat_xws_in_opening_tags = ( d, send ) =>
+      return send d unless ( d.$key is '<tag' )
+      if ( d.type is 'otag' ) and ( /^<\s+/.test d.text )
+        @_as_error d, '^ð1^', 'xtraows', "extraneous whitespace before tag name"
+      stack.push d
+      send d
+    #.......................................................................................................
+    pipeline.push $treat_xws_in_closing_tags = ( d, send ) =>
+      return send d unless ( d.$key is '>tag' )
+      if ( d.type is 'ctag' ) and ( ( /^<\s*\/\s+/.test d.text ) or ( /^<\s+\/\s*/.test d.text ) )
+        @_as_error d, '^ð2^', 'xtracws', "extraneous whitespace in closing tag"
+      send d
+    #.......................................................................................................
+    # pipeline.push ( d ) => urge '^357384^', d
+    pipeline.push ( d ) => R.push d
+    # debug '^409-1^', text
+    mr = new Moonriver pipeline
+    mr.drive()
+    # debug '^409-1^', R
+    #.......................................................................................................
     return R
 
   #---------------------------------------------------------------------------------------------------------
