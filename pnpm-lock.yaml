@@ -7,7 +7,7 @@ specifiers:
   hdml: ^1.0.2
   intertext: ^8.0.0
   intertype: ^7.7.0
-  moonriver: 0.0.1
+  moonriver: 1.0.0
   paragate: 4.0.0
   timetunnel: ^1.1.1
 
@@ -17,7 +17,7 @@ dependencies:
   hdml: 1.0.2
   intertext: 8.0.0
   intertype: 7.7.0
-  moonriver: 0.0.1
+  moonriver: 1.0.0
   paragate: 4.0.0
   timetunnel: 1.1.1
 
@@ -219,8 +219,8 @@ packages:
   /letsfreezethat/3.1.0:
     resolution: {integrity: sha512-jJ1nvvQi6unW0WifjNPMIb64Byom0EXzSKWFYA++EpyjK3qv1J2pqeSoEJ61tGJoNG0GoNjPoeLYhxW16riZaA==}
 
-  /moonriver/0.0.1:
-    resolution: {integrity: sha512-DL2+P/vVTnKjf8A6LIqwz4Q0N7J6b5bbSN0VB6rHVDh+Euh/EAXgdVhVO8LbFe+3W6QVz+qUGpUX5UpXwHF/QA==}
+  /moonriver/1.0.0:
+    resolution: {integrity: sha512-Cy90Po7/YejOnW6Jh3TNCfT10HbcQ867G5g9bmq41156esvKvOphHWSWjV9KhA4kiSsYLbCf8S/SCkK4IcU5KQ==}
     dependencies:
       cnd: 9.2.2
       guy: 4.1.0

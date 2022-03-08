@@ -32,7 +32,7 @@
     "hdml": "^1.0.2",
     "intertext": "^8.0.0",
     "intertype": "^7.7.0",
-    "moonriver": "0.0.1",
+    "moonriver": "1.0.0",
     "paragate": "4.0.0",
     "timetunnel": "^1.1.1"
   },
