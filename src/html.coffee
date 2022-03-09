@@ -42,6 +42,7 @@ types.declare 'mrg_parse_dsk_cfg', tests:
   "@isa.nonempty_text x.dsk":                         ( x ) -> @isa.nonempty_text x.dsk
 
 #===========================================================================================================
+### TAINT use more relaxed syntax for names ###
 xncr          = {}
 xncr.nameG    = ( ///     (?<name>      [a-z][a-z0-9]* )       /// ).source
 xncr.nameOG   = ( /// (?: (?<csg>   (?: [a-z][a-z0-9]* ) ) | ) /// ).source
@@ -81,65 +82,16 @@ class Htmlish
 
   #---------------------------------------------------------------------------------------------------------
   parse: ( text ) ->
-    { text
-      reveal  } = @_tunnel text
-    tokens      = thaw _HTMLISH.parse text
-    stack       = []
-    R           = []
-    #.......................................................................................................
-    for d, idx in tokens
-      #.....................................................................................................
-      if ( d.$key is '<tag' )
-        if ( d.type is 'otag' ) and ( /^<\s+/.test d.text )
-          @_as_error d, '^ð1^', 'xtraows', "extraneous whitespace before tag name"
-        stack.push d
-        R.push d; continue
-      #.....................................................................................................
-      if ( d.$key is '>tag' )
-        if ( d.type is 'ctag' ) and ( ( /^<\s*\/\s+/.test d.text ) or ( /^<\s+\/\s*/.test d.text ) )
-          @_as_error d, '^ð2^', 'xtracws', "extraneous whitespace in closing tag"
-          R.push d; continue
-        if stack.length is 0
-          @_as_error d, '^ð2^', 'xtractag', "extraneous closing tag </#{d.name}>"
-          R.push d; continue
-        # debug '^538457^', stack
-        matching_d = stack.pop()
-        if d.name?
-          if ( d.name != matching_d.name )
-            @_as_error d, '^ð2^', 'nomatch', "expected </#{matching_d.name}>, got </#{d.name}>"
-            R.push d; continue
-        else
-          d.name = matching_d.name
-        R.push d; continue
-      #.....................................................................................................
-      if ( d.$key is '^text' )
-        if ( /(?<!\\)[<&]/.test d.text )
-          @_as_error d, '^ð1^', 'bareachrs', "bare active characters"
-        d.text = reveal d.text
-        d.text = d.text.replace /\\</g,     '&lt;'
-        d.text = d.text.replace /\\&/g,     '&amp;'
-        d.text = d.text.replace /\\\n/ugs,  ''
-        d.text = d.text.replace /\\(.)/ugs, '$1'
-        R.push d; continue
-        # d.text = d.text.replace /\\([^\\])/ug, '$1'
-        # d.text = d.text.replace /\\\\/g, '\\'
-      #.....................................................................................................
-      R.push d; continue
-    return R
-
-  #---------------------------------------------------------------------------------------------------------
-  parse2: ( text ) ->
+    ### TAINT do not reconstruct pipeline on each run ###
     { text
       reveal  } = @_tunnel text
     tokens      = thaw _HTMLISH.parse text
     stack       = []
     R           = []
     mr          = new Moonriver()
-    #.......................................................................................................
-    ### TAINT do not reconstruct pipeline on each run ###
+    #-------------------------------------------------------------------------------------------------------
     mr.push tokens
-    # mr.push ( d ) => urge '^357384^', d
-    #.......................................................................................................
+    #-------------------------------------------------------------------------------------------------------
     mr.push $parse_ncrs = ( d, send ) =>
       ### TAINT preliminary code, should also parse CSG, CID, name as appropriate ###
       return send d unless ( d.$key is '^text' )
@@ -158,7 +110,7 @@ class Htmlish
         send e
       # send d
       return null
-    #.......................................................................................................
+    #-------------------------------------------------------------------------------------------------------
     mr.push $complain_about_bareachrs = ( d, send ) =>
       return send d unless ( d.$key is '^text' )
       #.....................................................................................................
@@ -167,7 +119,7 @@ class Htmlish
           @_as_error d, '^ð1^', 'bareachrs', "bare active characters"
       #.....................................................................................................
       send d
-    #.......................................................................................................
+    #-------------------------------------------------------------------------------------------------------
     mr.push $reinstate_text = ( d, send ) =>
       return send d unless ( d.$key is '^text' )
       d.text = reveal d.text
@@ -176,23 +128,23 @@ class Htmlish
       d.text = d.text.replace /\\\n/ugs,  ''    ### replace escaped newlines with empty string ###
       d.text = d.text.replace /\\(.)/ugs, '$1'  ### obliterate remaining backslashes (exc. escaped ones) ###
       send d
-    #.......................................................................................................
+    #-------------------------------------------------------------------------------------------------------
     mr.push $treat_xws_in_opening_tags = ( d, send ) =>
       return send d unless ( d.$key is '<tag' )
       if ( d.type is 'otag' ) and ( /^<\s+/.test d.text )
         @_as_error d, '^ð1^', 'xtraows', "extraneous whitespace before tag name"
       send d
-    #.......................................................................................................
+    #-------------------------------------------------------------------------------------------------------
     mr.push $treat_xws_in_closing_tags = ( d, send ) =>
       return send d unless ( d.$key is '>tag' )
       if ( d.type is 'ctag' ) and ( ( /^<\s*\/\s+/.test d.text ) or ( /^<\s+\/\s*/.test d.text ) )
         @_as_error d, '^ð2^', 'xtracws', "extraneous whitespace in closing tag"
       send d
-    #.......................................................................................................
+    #-------------------------------------------------------------------------------------------------------
     mr.push $handle_stack_open = ( d, send ) =>
       stack.push d if ( d.$key is '<tag' ) # and ( d.type is 'ctag' )
       send d
-    #.......................................................................................................
+    #-------------------------------------------------------------------------------------------------------
     mr.push $handle_stack_close = ( d, send ) =>
       # debug '^398^', stack
       return send d unless ( d.$key is '>tag' )
@@ -208,10 +160,9 @@ class Htmlish
       else
         d.name = matching_d.name
       send d
-    #.......................................................................................................
+    #-------------------------------------------------------------------------------------------------------
     mr.push ( d ) => R.push d
     mr.drive()
-    #.......................................................................................................
     return R
 
   #---------------------------------------------------------------------------------------------------------
