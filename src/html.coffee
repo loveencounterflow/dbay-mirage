@@ -63,6 +63,7 @@ class Htmlish
 
   #---------------------------------------------------------------------------------------------------------
   _tunnel: ( text ) ->
+    ### TAINT do not reconstruct tunnel for each call ###
     # guards    = 'äöüßp'
     # guards    = '①②③④⑤'
     guards    = '¥₽₨฿₮'
