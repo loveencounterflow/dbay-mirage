@@ -117,7 +117,8 @@ class Htmlish
         d.text = reveal d.text
         d.text = d.text.replace /\\</g,     '&lt;'
         d.text = d.text.replace /\\&/g,     '&amp;'
-        d.text = d.text.replace /\\(.)/ug,  '$1'
+        d.text = d.text.replace /\\\n/ugs,  ''
+        d.text = d.text.replace /\\(.)/ugs, '$1'
         R.push d; continue
         # d.text = d.text.replace /\\([^\\])/ug, '$1'
         # d.text = d.text.replace /\\\\/g, '\\'
