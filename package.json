@@ -34,7 +34,7 @@
     "intertype": "^7.7.0",
     "moonriver": "1.0.0",
     "paragate": "4.0.0",
-    "timetunnel": "^1.1.1"
+    "timetunnel": "2.0.0"
   },
   "devDependencies": {
     "dbay": "14.1.0"

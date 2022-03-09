@@ -9,7 +9,7 @@ specifiers:
   intertype: ^7.7.0
   moonriver: 1.0.0
   paragate: 4.0.0
-  timetunnel: ^1.1.1
+  timetunnel: 2.0.0
 
 dependencies:
   cnd: 9.2.2
@@ -19,7 +19,7 @@ dependencies:
   intertype: 7.7.0
   moonriver: 1.0.0
   paragate: 4.0.0
-  timetunnel: 1.1.1
+  timetunnel: 2.0.0
 
 devDependencies:
   dbay: 14.1.0
@@ -281,8 +281,8 @@ packages:
       ansi-regex: 5.0.1
     dev: false
 
-  /timetunnel/1.1.1:
-    resolution: {integrity: sha512-c8QMxTfNDawaQzrA6U2MIheqK/r3GkvNsnEiCQvLSddSfanynYRvRvViioIL6XTsIOWJrdL+ZoyGPx9GgUjgQA==}
+  /timetunnel/2.0.0:
+    resolution: {integrity: sha512-OaItoNR5xNfLtppZGjFzd60AJHYlRVet1jV0gzuS07ks6OXxM3SFSwsrASkx/10i9hVwPeTkpnvH/lNvdJvFog==}
     dependencies:
       cnd: 9.2.1
       intertype: 7.6.5
