@@ -50,7 +50,8 @@ xncr.nameG    = ( ///     (?<name>      [a-z][a-z0-9]* )       /// ).source
 xncr.nameOG   = ( /// (?: (?<csg>   (?: [a-z][a-z0-9]* ) ) | ) /// ).source
 xncr.hexG     = ( /// (?:     x  (?<hex> [a-fA-F0-9]+ )      ) /// ).source
 xncr.decG     = ( ///            (?<dec> [      0-9]+ )        /// ).source
-xncr.matcher  = /// & #{xncr.nameG} ; | & #{xncr.nameOG} \# (?: #{xncr.hexG} | #{xncr.decG} ) ; ///g
+xncr.matcher  = /// ^ & #{xncr.nameG} ; | & #{xncr.nameOG} \# (?: #{xncr.hexG} | #{xncr.decG} ) ; $ ///
+xncr.splitter = /// ( & [^\s;]+ ; ) ///
 
 
 #===========================================================================================================
@@ -78,39 +79,59 @@ class @Htmlish
     return { text, reveal: ( tnl.reveal.bind tnl ), }
 
   #---------------------------------------------------------------------------------------------------------
-  _parse_xncrs: ( text ) ->
-    parts = []
-    # for match
+  _entity_token_from_match: ( d, start, stop, match ) ->
+    g         = match.groups
+    R         = { d..., }
+    R.$key    = '^entity'
+    R.text    = match[ 0 ]
+    R.start   = start
+    R.stop    = stop
+    if g.name?
+      R.type    = 'named'
+      R.name    = g.name
+    else
+      R.type    = if g.csg? then 'xncr' else 'ncr'
+      R.csg     = g.csg if g.csg?
+      R.$value  = parseInt g.hex ? g.dec, ( if g.hex? then 16 else 10 )
+    return R
 
   #---------------------------------------------------------------------------------------------------------
   parse: ( text ) ->
     ### TAINT do not reconstruct pipeline on each run ###
     { text
-      reveal  } = @_tunnel text
-    tokens      = thaw _HTMLISH.parse text
-    stack       = []
-    R           = []
-    mr          = new Moonriver()
+      reveal  }   = @_tunnel text
+    tokens        = thaw _HTMLISH.parse text
+    stack         = []
+    R             = []
+    mr            = new Moonriver()
+    xncr_matcher  = @constructor.C.xncr.matcher
+    xncr_splitter = @constructor.C.xncr.splitter
     #-------------------------------------------------------------------------------------------------------
     mr.push tokens
     #-------------------------------------------------------------------------------------------------------
     mr.push $parse_ncrs = ( d, send ) =>
-      ### TAINT preliminary code, should also parse CSG, CID, name as appropriate ###
       return send d unless ( d.$key is '^text' )
-      return send d if ( parts = d.text.split /(&[^\s;&]+;)/ ).length is 1
-      # info '^309^', parts
-      is_ncr = true
+      parts     = d.text.split xncr_splitter
+      return send d unless parts.length > 1
+      is_entity = true
+      start     = 0
+      #.....................................................................................................
       for part in parts
-        e = { d..., }
-        if ( is_ncr = not is_ncr )
-          e.$key  = '^ncr'
-          e.type  = 'named'
+        is_entity = not is_entity
+        continue if part is ''
+        stop      = start + part.length
+        #...................................................................................................
+        if is_entity and ( match = part.match xncr_matcher )?
+          send @_entity_token_from_match d, start, stop, match
+        #...................................................................................................
+        else
+          e       = { d..., }
           e.text  = part
+          e.start = start
+          e.stop  = stop
           send e
-          continue
-        e.text  = part
-        send e
-      # send d
+        #...................................................................................................
+        start = stop
       return null
     #-------------------------------------------------------------------------------------------------------
     mr.push $complain_about_bareachrs = ( d, send ) =>
