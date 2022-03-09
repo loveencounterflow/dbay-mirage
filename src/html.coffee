@@ -96,6 +96,14 @@ class @Htmlish
     return R
 
   #---------------------------------------------------------------------------------------------------------
+  _text_token_from_part: ( d, start, stop, part ) ->
+    R       = { d..., }
+    R.text  = part
+    R.start = start
+    R.stop  = stop
+    return R
+
+  #---------------------------------------------------------------------------------------------------------
   parse: ( text ) ->
     ### TAINT do not reconstruct pipeline on each run ###
     { text
@@ -123,13 +131,8 @@ class @Htmlish
         #...................................................................................................
         if is_entity and ( match = part.match xncr_matcher )?
           send @_entity_token_from_match d, start, stop, match
-        #...................................................................................................
         else
-          e       = { d..., }
-          e.text  = part
-          e.start = start
-          e.stop  = stop
-          send e
+          send @_text_token_from_part d, start, stop, part
         #...................................................................................................
         start = stop
       return null
