@@ -138,7 +138,35 @@ class Htmlish
     #.......................................................................................................
     ### TAINT do not reconstruct pipeline on each run ###
     mr.push tokens
-    mr.push ( d ) => urge '^357384^', d
+    # mr.push ( d ) => urge '^357384^', d
+    #.......................................................................................................
+    mr.push $parse_ncrs = ( d, send ) =>
+      ### TAINT preliminary code, should also parse CSG, CID, name as appropriate ###
+      return send d unless ( d.$key is '^text' )
+      return send d if ( parts = d.text.split /(&[^\s;&]+;)/ ).length is 1
+      # info '^309^', parts
+      is_ncr = true
+      for part in parts
+        e = { d..., }
+        if ( is_ncr = not is_ncr )
+          e.$key  = '^ncr'
+          e.type  = 'named'
+          e.text  = part
+          send e
+          continue
+        e.text  = part
+        send e
+      # send d
+      return null
+    #.......................................................................................................
+    mr.push $complain_about_bareachrs = ( d, send ) =>
+      return send d unless ( d.$key is '^text' )
+      #.....................................................................................................
+      if ( d.$key is '^text' )
+        if ( /(?<!\\)[<&]/.test d.text )
+          @_as_error d, '^ð1^', 'bareachrs', "bare active characters"
+      #.....................................................................................................
+      send d
     #.......................................................................................................
     mr.push $reinstate_text = ( d, send ) =>
       return send d unless ( d.$key is '^text' )
