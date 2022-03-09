@@ -143,9 +143,10 @@ class Htmlish
     mr.push $reinstate_text = ( d, send ) =>
       return send d unless ( d.$key is '^text' )
       d.text = reveal d.text
-      d.text = d.text.replace /\\</g,     '&lt;'
-      d.text = d.text.replace /\\&/g,     '&amp;'
-      d.text = d.text.replace /\\(.)/ug,  '$1'
+      d.text = d.text.replace /\\</g,     '&lt;'  ### TAINT conflicts with NCR parsing ###
+      d.text = d.text.replace /\\&/g,     '&amp;' ### TAINT conflicts with NCR parsing ###
+      d.text = d.text.replace /\\\n/ugs,  ''    ### replace escaped newlines with empty string ###
+      d.text = d.text.replace /\\(.)/ugs, '$1'  ### obliterate remaining backslashes (exc. escaped ones) ###
       send d
     #.......................................................................................................
     mr.push $treat_xws_in_opening_tags = ( d, send ) =>
