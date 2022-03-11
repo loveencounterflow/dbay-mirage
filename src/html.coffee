@@ -189,6 +189,7 @@ class @Html
           t.pce                                                               as pce,
           t.typ                                                               as typ,
           t.tag                                                               as tag,
+          t.syntax                                                            as syntax,
           t.atrid                                                             as atrid,
           #{prefix}_html_create_tag( t.typ, t.tag, a.k, a.v, t.txt ) over w   as html
         from
@@ -293,28 +294,37 @@ class @Html
     #.......................................................................................................
     @mrg.db.with_transaction =>
       for { oln1, wslc, trk, txt, } from @mrg.walk_par_rows { dsk, }
-        tokens = @HTMLISH.parse txt, @_get_tag_catalog()
+        tokens  = @HTMLISH.parse txt, @_get_tag_catalog()
+        oln     = null
+        col     = null
+        syntax  = null
+        #...................................................................................................
         for d in tokens
-          oln = oln1 + d.delta_lnr ? 0
-          col = d.col
+          oln     = oln1 + d.delta_lnr ? 0
+          col     = d.col
+          syntax  = d.syntax ? 'html'
           switch d.$key
-            when '<tag'     then @_append_tag dsk, oln, col, trk, '<', d.name, d.syntax, d.atrs
-            when '>tag'     then @_append_tag dsk, oln, col, trk, '>', d.name, d.syntax, d.atrs
-            when '^tag'     then @_append_tag dsk, oln, col, trk, '^', d.name, d.syntax, d.atrs
-            when '^text'    then @_append_tag dsk, oln, col, trk, 't', null,   d.syntax, null, d.text
+            when '<tag'     then @_append_tag dsk, oln, col, trk, '<', d.name, syntax, d.atrs
+            when '>tag'     then @_append_tag dsk, oln, col, trk, '>', d.name, syntax, d.atrs
+            when '^tag'     then @_append_tag dsk, oln, col, trk, '^', d.name, syntax, d.atrs
+            when '^text'    then @_append_tag dsk, oln, col, trk, 't', null,   syntax, null, d.text
             when '^comment', '^doctype'
-              @_append_tag dsk, oln, col, trk, 'r', null, d.syntax, null, d.text.replace /^<!--\s*(.*?)\s*-->$/, '$1'
+              @_append_tag dsk, oln, col, trk, 'r', null, syntax, null, d.text.replace /^<!--\s*(.*?)\s*-->$/, '$1'
             when '^error'
               warn '^435345^', "error #{rpr d}"
               atrs = { start: d.start, stop: d.stop, code: d.code, }
-              @_append_tag dsk, oln, col, trk, 'e', null, d.syntax, atrs, "#{d.message}: #{rpr d.text}"
+              @_append_tag dsk, oln, col, trk, 'e', null, syntax, atrs, "#{d.message}: #{rpr d.text}"
             else
               warn '^435345^', "unhandled token #{rpr d}"
               atrs  = { start: d.start, stop: d.stop, code: 'unhandled', }
               d     = { $key: d.$key, name: d.name, type: d.type, }
               @_append_tag dsk, oln, col, trk, 'e', null, atrs, "unhandled token: #{rpr d}"
+        #...................................................................................................
+        oln    ?= oln1
+        col    ?= 1
+        syntax ?= 'html'
         for _ in [ 1 .. wslc + 1 ]
-          @_append_tag dsk, oln ? oln1, col ? 1, trk, 'b', null, null, null, '\n'
+          @_append_tag dsk, oln, col, trk, 'b', null, syntax, null, '\n'
     return null
 
 

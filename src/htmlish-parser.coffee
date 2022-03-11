@@ -127,14 +127,12 @@ class @Htmlish
       send d
 
   #---------------------------------------------------------------------------------------------------------
-  $set_syntax_on_ctag: ( tag_catalog ) ->
+  $set_syntax_on_other_tokens: ( tag_catalog ) ->
     stack = [ 'html', ]
     return ( d, send ) =>
-      if ( d.$key is '<tag' )
-        stack.push d.syntax ? 'html'
-      else if ( d.$key is '>tag' )
-        stack.pop()
-        d.syntax = stack[ stack.length - 1 ] ? 'html'
+      if      ( d.$key is '<tag' )  then  stack.push d.syntax ? 'html'
+      else if ( d.$key is '>tag' )  then  stack.pop()
+      d.syntax = stack[ stack.length - 1 ] ? 'html'
       send d
 
   #---------------------------------------------------------------------------------------------------------
@@ -280,7 +278,7 @@ class @Htmlish
     mr.push @$add_location()
     mr.push @$set_syntax_on_otag            tag_catalog if tag_catalog?
     mr.push @$convert_nonhtml_syntax()                  if tag_catalog?
-    mr.push @$set_syntax_on_ctag            tag_catalog if tag_catalog?
+    mr.push @$set_syntax_on_other_tokens    tag_catalog if tag_catalog?
     mr.push @$parse_ncrs()
     mr.push @$complain_about_bareachrs()
     mr.push @$reveal_tunneled_text          reveal
