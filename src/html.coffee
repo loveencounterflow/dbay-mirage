@@ -29,6 +29,7 @@ _HTMLISH                  = ( require 'paragate/lib/htmlish.grammar' ).new_gramm
   thaw }                  = GUY.lft
 TIMETUNNEL                = require 'timetunnel'
 { Moonriver }             = require 'moonriver'
+{ $ }                     = Moonriver
 
 
 #===========================================================================================================
@@ -104,7 +105,8 @@ class @Htmlish
     return R
 
   #---------------------------------------------------------------------------------------------------------
-  parse: ( text ) ->
+  parse: ( text, non_html_tags = null ) ->
+    ### TAINT use `cfg` pattern ###
     ### TAINT do not reconstruct pipeline on each run ###
     { text
       reveal  }   = @_tunnel text
@@ -123,6 +125,26 @@ class @Htmlish
       d.delta_lnr   = lnr - 1
       d.col         = col
       send d
+    #-------------------------------------------------------------------------------------------------------
+    if non_html_tags?
+      mr.push $filter_nonhtml_syntax = do =>
+        wait_for_name = null
+        return ( d, send ) =>
+          if wait_for_name?
+            #...............................................................................................
+            if ( d.$key is '>tag' ) and ( d.name is wait_for_name )
+              wait_for_name = null
+              return send d
+            #...............................................................................................
+            e = { d..., }
+            e.$key  = '^rawtext'
+            delete e.atrs
+            return send e
+          #.................................................................................................
+          if ( d.$key is '<tag' ) and ( non_html_tags.has d.name )
+            wait_for_name = d.name
+          #.................................................................................................
+          send d
     #-------------------------------------------------------------------------------------------------------
     mr.push $parse_ncrs = ( d, send ) =>
       return send d unless ( d.$key is '^text' )
@@ -153,9 +175,13 @@ class @Htmlish
       #.....................................................................................................
       send d
     #-------------------------------------------------------------------------------------------------------
-    mr.push $reinstate_text = ( d, send ) =>
-      return send d unless ( d.$key is '^text' )
+    mr.push $reveal_tunneled_text = ( d, send ) =>
+      return send d unless ( d.$key is '^text' ) or ( d.$key is '^rawtext' )
       d.text = reveal d.text
+      send d
+    #-------------------------------------------------------------------------------------------------------
+    mr.push $remove_backslashes = ( d, send ) =>
+      return send d unless ( d.$key is '^text' )
       d.text = d.text.replace /\\</g,     '&lt;'  ### TAINT conflicts with NCR parsing ###
       d.text = d.text.replace /\\&/g,     '&amp;' ### TAINT conflicts with NCR parsing ###
       d.text = d.text.replace /\\\n/ugs,  ''    ### replace escaped newlines with empty string ###
@@ -193,6 +219,35 @@ class @Htmlish
       else
         d.name = matching_d.name
       send d
+    #-------------------------------------------------------------------------------------------------------
+    mr.push $relabel_rawtexts = ( d, send ) ->
+      urge '^387^', rpr d.text
+      d.$key = '^text' if d.$key is '^rawtext'
+      send d
+    # #-------------------------------------------------------------------------------------------------------
+    # mr.push $consolidate_texts = do =>
+    #   last          = Symbol 'last'
+    #   # prv_was_text  = false
+    #   send          = null
+    #   collector     = []
+    #   #.....................................................................................................
+    #   flush = ->
+    #     # prv_was_text      = false
+    #     return if collector.length is 0
+    #     d = collector[  0 ]
+    #     if collector.length > 1
+    #       d.text  = ( e.text for e in collector ).join ''
+    #       d.stop  = collector[ collector.length - 1 ].stop
+    #     send d
+    #     collector.length  = 0
+    #   #.....................................................................................................
+    #   return $ { last, }, ( d, _send ) ->
+    #     send = _send
+    #     return flush() if d is last
+    #     unless d.$key is '^text'
+    #       flush()
+    #       return send d
+    #     collector.push d
     #-------------------------------------------------------------------------------------------------------
     mr.push ( d ) => R.push d
     mr.drive()
@@ -433,14 +488,20 @@ class @Html
     return @statements.insert_content.get { dsk, oln, col, trk, typ, tag, atrid, txt: text, }
 
   #---------------------------------------------------------------------------------------------------------
+  ### TAINT consider to cache ###
+  _get_non_html_tags: -> new Set @mrg.db.all_first_values SQL"""
+    select * from #{@cfg.prefix}_html_tags where syntax != 'html';"""
+
+  #---------------------------------------------------------------------------------------------------------
   parse_dsk: ( cfg ) ->
     validate.mrg_parse_dsk_cfg ( cfg = { @constructor.C.defaults.mrg_parse_dsk_cfg..., cfg..., } )
     { dsk } = cfg
     #.......................................................................................................
     @mrg.db.with_transaction =>
       for { oln1, wslc, trk, txt, } from @mrg.walk_par_rows { dsk, }
-        tokens = @HTMLISH.parse txt
+        tokens = @HTMLISH.parse txt, @_get_non_html_tags()
         for d in tokens
+          debug '^383^', d
           oln = oln1 + d.delta_lnr ? 0
           col = d.col
           switch d.$key
