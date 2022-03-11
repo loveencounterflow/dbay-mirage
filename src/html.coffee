@@ -315,7 +315,7 @@ class @Html
               d     = { $key: d.$key, name: d.name, type: d.type, }
               @_append_tag dsk, oln, col, trk, 'e', null, atrs, "unhandled token: #{rpr d}"
         for _ in [ 1 .. wslc + 1 ]
-          @_append_tag dsk, oln ? oln1, col ? 1, trk, 'b', null, d.syntax, null, '\n'
+          @_append_tag dsk, oln ? oln1, col ? 1, trk, 'b', null, null, null, '\n'
     return null
 
 
