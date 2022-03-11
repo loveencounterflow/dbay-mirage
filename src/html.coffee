@@ -216,7 +216,6 @@ class @Html
     db =>
       try
         for d in ( require './data-html5-tags' ).tags
-          debug '^342^', d
           tag       = d.tag
           is_empty  = if d.is_empty then 1 else 0
           is_block  = if d.is_block then 1 else 0

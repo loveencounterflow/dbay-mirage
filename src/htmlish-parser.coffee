@@ -130,8 +130,11 @@ class @Htmlish
   $set_syntax_on_ctag: ( tag_catalog ) ->
     stack = [ 'html', ]
     return ( d, send ) =>
-      if      ( d.$key is '<tag' )  then  stack.push d.syntax ? 'html'
-      else if ( d.$key is '>tag' )  then  stack.pop(); d.syntax = stack[ stack.length - 1 ] ? 'html'
+      if ( d.$key is '<tag' )
+        stack.push d.syntax ? 'html'
+      else if ( d.$key is '>tag' )
+        stack.pop()
+        d.syntax = stack[ stack.length - 1 ] ? 'html'
       send d
 
   #---------------------------------------------------------------------------------------------------------
@@ -204,7 +207,6 @@ class @Htmlish
 
   #---------------------------------------------------------------------------------------------------------
   $handle_stack_close: ( stack ) -> ( d, send ) =>
-    # debug '^398^', stack
     return send d unless ( d.$key is '>tag' )
     #.....................................................................................................
     if stack.length is 0
