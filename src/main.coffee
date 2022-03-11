@@ -215,7 +215,7 @@ class @Mrg
           trk     integer not null default 1,
           pce     integer not null default 1,
           mat     boolean not null generated always as ( txt != '' ) virtual, -- material, i.e. non-blank
-          par     boolean not null,
+          par     integer not null,
           txt     text    not null,
         primary key ( dsk, oln, trk, pce ),
         foreign key ( dsk, oln, trk, pce ) references #{prefix}_mirror
