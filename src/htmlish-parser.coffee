@@ -92,48 +92,38 @@ class @Htmlish
     return R
 
   #---------------------------------------------------------------------------------------------------------
-  parse: ( text, non_html_tags = null ) ->
-    ### TAINT use `cfg` pattern ###
-    ### TAINT do not reconstruct pipeline on each run ###
-    { text
-      reveal  }   = @_tunnel text
-    tokens        = thaw _HTMLISH.parse text
-    stack         = []
-    R             = []
-    mr            = new Moonriver()
+  $add_location: -> ( d, send ) =>
+    [ lnr
+      col       ] = d.$vnr ? [ null, null, ]
+    d.delta_lnr   = lnr - 1
+    d.col         = col
+    send d
+
+  #---------------------------------------------------------------------------------------------------------
+  $filter_nonhtml_syntax: ( non_html_tags ) ->
+    wait_for_name = null
+    return ( d, send ) =>
+      if wait_for_name?
+        #...................................................................................................
+        if ( d.$key is '>tag' ) and ( d.name is wait_for_name )
+          wait_for_name = null
+          return send d
+        #...................................................................................................
+        e = { d..., }
+        e.$key  = '^rawtext'
+        delete e.atrs
+        return send e
+      #.....................................................................................................
+      if ( d.$key is '<tag' ) and ( non_html_tags.has d.name )
+        wait_for_name = d.name
+      #.....................................................................................................
+      send d
+
+  #---------------------------------------------------------------------------------------------------------
+  $parse_ncrs: ->
     xncr_matcher  = @constructor.C.xncr.matcher
     xncr_splitter = @constructor.C.xncr.splitter
-    #-------------------------------------------------------------------------------------------------------
-    mr.push tokens
-    #-------------------------------------------------------------------------------------------------------
-    mr.push $add_location = ( d, send ) =>
-      [ lnr
-        col       ] = d.$vnr ? [ null, null, ]
-      d.delta_lnr   = lnr - 1
-      d.col         = col
-      send d
-    #-------------------------------------------------------------------------------------------------------
-    if non_html_tags?
-      mr.push $filter_nonhtml_syntax = do =>
-        wait_for_name = null
-        return ( d, send ) =>
-          if wait_for_name?
-            #...............................................................................................
-            if ( d.$key is '>tag' ) and ( d.name is wait_for_name )
-              wait_for_name = null
-              return send d
-            #...............................................................................................
-            e = { d..., }
-            e.$key  = '^rawtext'
-            delete e.atrs
-            return send e
-          #.................................................................................................
-          if ( d.$key is '<tag' ) and ( non_html_tags.has d.name )
-            wait_for_name = d.name
-          #.................................................................................................
-          send d
-    #-------------------------------------------------------------------------------------------------------
-    mr.push $parse_ncrs = ( d, send ) =>
+    return ( d, send ) =>
       return send d unless ( d.$key is '^text' )
       parts     = d.text.split xncr_splitter
       return send d unless parts.length > 1
@@ -152,91 +142,124 @@ class @Htmlish
         #...................................................................................................
         start = stop
       return null
+
+  #---------------------------------------------------------------------------------------------------------
+  $complain_about_bareachrs: -> ( d, send ) =>
+    return send d unless ( d.$key is '^text' )
+    #.....................................................................................................
+    if ( d.$key is '^text' )
+      if ( /(?<!\\)[<&]/.test d.text )
+        @_as_error d, '^ð1^', 'bareachrs', "bare active characters"
+    #.....................................................................................................
+    send d
+
+  #---------------------------------------------------------------------------------------------------------
+  $reveal_tunneled_text: ( reveal ) -> ( d, send ) =>
+    return send d unless ( d.$key is '^text' ) or ( d.$key is '^rawtext' )
+    d.text = reveal d.text
+    send d
+
+  #---------------------------------------------------------------------------------------------------------
+  $remove_backslashes: -> ( d, send ) =>
+    return send d unless ( d.$key is '^text' )
+    d.text = d.text.replace /\\</g,     '&lt;'  ### TAINT conflicts with NCR parsing ###
+    d.text = d.text.replace /\\&/g,     '&amp;' ### TAINT conflicts with NCR parsing ###
+    d.text = d.text.replace /\\\n/ugs,  ''    ### replace escaped newlines with empty string ###
+    d.text = d.text.replace /\\(.)/ugs, '$1'  ### obliterate remaining backslashes (exc. escaped ones) ###
+    send d
+
+  #---------------------------------------------------------------------------------------------------------
+  $treat_xws_in_opening_tags: -> ( d, send ) =>
+    return send d unless ( d.$key is '<tag' )
+    if ( d.type is 'otag' ) and ( /^<\s+/.test d.text )
+      @_as_error d, '^ð1^', 'xtraows', "extraneous whitespace before tag name"
+    send d
+
+  #---------------------------------------------------------------------------------------------------------
+  $treat_xws_in_closing_tags: -> ( d, send ) =>
+    return send d unless ( d.$key is '>tag' )
+    if ( d.type is 'ctag' ) and ( ( /^<\s*\/\s+/.test d.text ) or ( /^<\s+\/\s*/.test d.text ) )
+      @_as_error d, '^ð2^', 'xtracws', "extraneous whitespace in closing tag"
+    send d
+
+  #---------------------------------------------------------------------------------------------------------
+  $handle_stack_open: ( stack ) -> ( d, send ) =>
+    stack.push d if ( d.$key is '<tag' ) # and ( d.type is 'ctag' )
+    send d
+
+  #---------------------------------------------------------------------------------------------------------
+  $handle_stack_close: ( stack ) -> ( d, send ) =>
+    # debug '^398^', stack
+    return send d unless ( d.$key is '>tag' )
+    #.....................................................................................................
+    if stack.length is 0
+      return send @_as_error d, '^ð2^', 'xtractag', "extraneous closing tag </#{d.name}>"
+    #.....................................................................................................
+    matching_d = stack.pop()
+    if d.name?
+      if ( d.name != matching_d.name )
+        return send @_as_error d, '^ð2^', 'nomatch', "expected </#{matching_d.name}>, got </#{d.name}>"
+    #...................................................................................................
+    else
+      d.name = matching_d.name
+    send d
+
+  #---------------------------------------------------------------------------------------------------------
+  $relabel_rawtexts: -> ( d, send ) ->
+    urge '^387^', rpr d.text
+    d.$key = '^text' if d.$key is '^rawtext'
+    send d
+
+  # #-------------------------------------------------------------------------------------------------------
+  # mr.push $consolidate_texts = do =>
+  #   last          = Symbol 'last'
+  #   # prv_was_text  = false
+  #   send          = null
+  #   collector     = []
+  #   #.....................................................................................................
+  #   flush = ->
+  #     # prv_was_text      = false
+  #     return if collector.length is 0
+  #     d = collector[  0 ]
+  #     if collector.length > 1
+  #       d.text  = ( e.text for e in collector ).join ''
+  #       d.stop  = collector[ collector.length - 1 ].stop
+  #     send d
+  #     collector.length  = 0
+  #   #.....................................................................................................
+  #   return $ { last, }, ( d, _send ) ->
+  #     send = _send
+  #     return flush() if d is last
+  #     unless d.$key is '^text'
+  #       flush()
+  #       return send d
+  #     collector.push d
+
+  #---------------------------------------------------------------------------------------------------------
+  parse: ( text, non_html_tags = null ) ->
+    ### TAINT use `cfg` pattern ###
+    ### TAINT do not reconstruct pipeline on each run ###
+    { text
+      reveal  }   = @_tunnel text
+    tokens        = thaw _HTMLISH.parse text
+    stack         = []
+    R             = []
+    mr            = new Moonriver()
     #-------------------------------------------------------------------------------------------------------
-    mr.push $complain_about_bareachrs = ( d, send ) =>
-      return send d unless ( d.$key is '^text' )
-      #.....................................................................................................
-      if ( d.$key is '^text' )
-        if ( /(?<!\\)[<&]/.test d.text )
-          @_as_error d, '^ð1^', 'bareachrs', "bare active characters"
-      #.....................................................................................................
-      send d
-    #-------------------------------------------------------------------------------------------------------
-    mr.push $reveal_tunneled_text = ( d, send ) =>
-      return send d unless ( d.$key is '^text' ) or ( d.$key is '^rawtext' )
-      d.text = reveal d.text
-      send d
-    #-------------------------------------------------------------------------------------------------------
-    mr.push $remove_backslashes = ( d, send ) =>
-      return send d unless ( d.$key is '^text' )
-      d.text = d.text.replace /\\</g,     '&lt;'  ### TAINT conflicts with NCR parsing ###
-      d.text = d.text.replace /\\&/g,     '&amp;' ### TAINT conflicts with NCR parsing ###
-      d.text = d.text.replace /\\\n/ugs,  ''    ### replace escaped newlines with empty string ###
-      d.text = d.text.replace /\\(.)/ugs, '$1'  ### obliterate remaining backslashes (exc. escaped ones) ###
-      send d
-    #-------------------------------------------------------------------------------------------------------
-    mr.push $treat_xws_in_opening_tags = ( d, send ) =>
-      return send d unless ( d.$key is '<tag' )
-      if ( d.type is 'otag' ) and ( /^<\s+/.test d.text )
-        @_as_error d, '^ð1^', 'xtraows', "extraneous whitespace before tag name"
-      send d
-    #-------------------------------------------------------------------------------------------------------
-    mr.push $treat_xws_in_closing_tags = ( d, send ) =>
-      return send d unless ( d.$key is '>tag' )
-      if ( d.type is 'ctag' ) and ( ( /^<\s*\/\s+/.test d.text ) or ( /^<\s+\/\s*/.test d.text ) )
-        @_as_error d, '^ð2^', 'xtracws', "extraneous whitespace in closing tag"
-      send d
-    #-------------------------------------------------------------------------------------------------------
-    mr.push $handle_stack_open = ( d, send ) =>
-      stack.push d if ( d.$key is '<tag' ) # and ( d.type is 'ctag' )
-      send d
-    #-------------------------------------------------------------------------------------------------------
-    mr.push $handle_stack_close = ( d, send ) =>
-      # debug '^398^', stack
-      return send d unless ( d.$key is '>tag' )
-      #.....................................................................................................
-      if stack.length is 0
-        return send @_as_error d, '^ð2^', 'xtractag', "extraneous closing tag </#{d.name}>"
-      #.....................................................................................................
-      matching_d = stack.pop()
-      if d.name?
-        if ( d.name != matching_d.name )
-          return send @_as_error d, '^ð2^', 'nomatch', "expected </#{matching_d.name}>, got </#{d.name}>"
-      #...................................................................................................
-      else
-        d.name = matching_d.name
-      send d
-    #-------------------------------------------------------------------------------------------------------
-    mr.push $relabel_rawtexts = ( d, send ) ->
-      urge '^387^', rpr d.text
-      d.$key = '^text' if d.$key is '^rawtext'
-      send d
-    # #-------------------------------------------------------------------------------------------------------
-    # mr.push $consolidate_texts = do =>
-    #   last          = Symbol 'last'
-    #   # prv_was_text  = false
-    #   send          = null
-    #   collector     = []
-    #   #.....................................................................................................
-    #   flush = ->
-    #     # prv_was_text      = false
-    #     return if collector.length is 0
-    #     d = collector[  0 ]
-    #     if collector.length > 1
-    #       d.text  = ( e.text for e in collector ).join ''
-    #       d.stop  = collector[ collector.length - 1 ].stop
-    #     send d
-    #     collector.length  = 0
-    #   #.....................................................................................................
-    #   return $ { last, }, ( d, _send ) ->
-    #     send = _send
-    #     return flush() if d is last
-    #     unless d.$key is '^text'
-    #       flush()
-    #       return send d
-    #     collector.push d
-    #-------------------------------------------------------------------------------------------------------
-    mr.push ( d ) => R.push d
+    mr.push tokens
+    mr.push @$add_location()
+    mr.push @$filter_nonhtml_syntax         non_html_tags if non_html_tags?
+    mr.push @$parse_ncrs()
+    mr.push @$complain_about_bareachrs()
+    mr.push @$reveal_tunneled_text          reveal
+    mr.push @$remove_backslashes()
+    mr.push @$treat_xws_in_opening_tags()
+    mr.push @$treat_xws_in_closing_tags()
+    mr.push @$handle_stack_open             stack
+    mr.push @$handle_stack_close            stack
+    mr.push @$relabel_rawtexts()
+    # mr.push @$consolidate_texts()
+    mr.push ( d ) -> R.push d
     mr.drive()
     return R
 
