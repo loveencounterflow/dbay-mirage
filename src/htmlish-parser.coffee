@@ -106,7 +106,7 @@ class @Htmlish
     send d
 
   #---------------------------------------------------------------------------------------------------------
-  $filter_nonhtml_syntax: ->
+  $convert_nonhtml_syntax: ->
     wait_for_name = null
     return ( d, send ) =>
       if wait_for_name?
@@ -279,7 +279,7 @@ class @Htmlish
     mr.push tokens
     mr.push @$add_location()
     mr.push @$set_syntax_on_otag            tag_catalog if tag_catalog?
-    mr.push @$filter_nonhtml_syntax()                   if tag_catalog?
+    mr.push @$convert_nonhtml_syntax()                  if tag_catalog?
     mr.push @$set_syntax_on_ctag            tag_catalog if tag_catalog?
     mr.push @$parse_ncrs()
     mr.push @$complain_about_bareachrs()
