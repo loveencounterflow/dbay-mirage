@@ -342,8 +342,8 @@ class @Mrg
           returning *;"""
       #.....................................................................................................
       append_text_to_raw_mirror: SQL"""
-        insert into #{prefix}_raw_mirror ( dsk, oln, trk, txt )
-          values ( $dsk, $oln, $trk, $text )
+        insert into #{prefix}_raw_mirror ( dsk, oln, trk, par, txt )
+          values ( $dsk, $oln, $trk, $par, $text )
           returning *;"""
       # #.....................................................................................................
       # insert_lnpart: @db.create_insert {
@@ -410,8 +410,10 @@ class @Mrg
     @allowing_change_on_mirror =>
       for line in lines
         d = @db.first_row @sql.append_line_to_mirror, { dsk, trk, }
+        ### TAINT get `par` from DB ###
         debug '^32243^', d
-        R.push @db.first_row @sql.append_text_to_raw_mirror,  { dsk, oln: d.oln, trk, text: line, }
+        R.push @db.first_row @sql.append_text_to_raw_mirror, \
+          { dsk, oln: d.oln, trk, pce: d.pce, par, text: line, }
       return null
     return R
 
