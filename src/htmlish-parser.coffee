@@ -100,7 +100,13 @@ class @Htmlish
     send d
 
   #---------------------------------------------------------------------------------------------------------
-  $filter_nonhtml_syntax: ( non_html_tags ) ->
+  $set_syntax_on_otag: ( tag_catalog ) -> ( d, send ) =>
+    return send d unless ( d.$key is '<tag' )
+    d.syntax = tag_catalog[ d.name ]?.syntax ? 'html'
+    send d
+
+  #---------------------------------------------------------------------------------------------------------
+  $filter_nonhtml_syntax: ->
     wait_for_name = null
     return ( d, send ) =>
       if wait_for_name?
@@ -110,13 +116,22 @@ class @Htmlish
           return send d
         #...................................................................................................
         e = { d..., }
-        e.$key  = '^rawtext'
+        e.$key    = '^rawtext'
+        e.syntax  = null
         delete e.atrs
         return send e
       #.....................................................................................................
-      if ( d.$key is '<tag' ) and ( non_html_tags.has d.name )
+      if ( d.$key is '<tag' ) and ( d.syntax isnt 'html' )
         wait_for_name = d.name
       #.....................................................................................................
+      send d
+
+  #---------------------------------------------------------------------------------------------------------
+  $set_syntax_on_ctag: ( tag_catalog ) ->
+    stack = [ 'html', ]
+    return ( d, send ) =>
+      if      ( d.$key is '<tag' )  then  stack.push d.syntax ? 'html'
+      else if ( d.$key is '>tag' )  then  stack.pop(); d.syntax = stack[ stack.length - 1 ] ? 'html'
       send d
 
   #---------------------------------------------------------------------------------------------------------
@@ -249,7 +264,7 @@ class @Htmlish
     return null
 
   #---------------------------------------------------------------------------------------------------------
-  parse: ( text, non_html_tags = null ) ->
+  parse: ( text, tag_catalog = null ) ->
     ### TAINT use `cfg` pattern ###
     ### TAINT do not reconstruct pipeline on each run ###
     { text
@@ -261,7 +276,9 @@ class @Htmlish
     #-------------------------------------------------------------------------------------------------------
     mr.push tokens
     mr.push @$add_location()
-    mr.push @$filter_nonhtml_syntax         non_html_tags if non_html_tags?
+    mr.push @$set_syntax_on_otag            tag_catalog if tag_catalog?
+    mr.push @$filter_nonhtml_syntax()                   if tag_catalog?
+    mr.push @$set_syntax_on_ctag            tag_catalog if tag_catalog?
     mr.push @$parse_ncrs()
     mr.push @$complain_about_bareachrs()
     mr.push @$reveal_tunneled_text          reveal
