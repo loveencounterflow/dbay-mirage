@@ -117,6 +117,13 @@ class @Htmlish
     #-------------------------------------------------------------------------------------------------------
     mr.push tokens
     #-------------------------------------------------------------------------------------------------------
+    mr.push $add_location = ( d, send ) =>
+      [ lnr
+        col       ] = d.$vnr ? [ null, null, ]
+      d.delta_lnr   = lnr - 1
+      d.col         = col
+      send d
+    #-------------------------------------------------------------------------------------------------------
     mr.push $parse_ncrs = ( d, send ) =>
       return send d unless ( d.$key is '^text' )
       parts     = d.text.split xncr_splitter
@@ -319,13 +326,14 @@ class @Html
       create table #{prefix}_html_mirror (
           dsk     text    not null,                         -- data source key
           oln     integer not null,                         -- original line nr (1-based)
+          col     integer not null,                         -- column where `txt` starts
           trk     integer not null default 1,               -- track number
           pce     integer not null default 1,               -- piece number
           typ     text    not null,                         -- node type
           tag     text,                                     -- null for texts, comments
           atrid   integer,
           -- act     boolean not null default 1,               -- true: active, false: deleted
-          txt   text,
+          txt     text,
         primary key ( dsk, oln, trk, pce ),
         foreign key ( dsk   ) references #{prefix}_datasources,
         foreign key ( typ   ) references #{prefix}_html_typs,
@@ -336,6 +344,7 @@ class @Html
       create view #{prefix}_html_tags_and_html as select distinct
           t.dsk                                                               as dsk,
           t.oln                                                               as oln,
+          t.col                                                               as col,
           t.trk                                                               as trk,
           t.pce                                                               as pce,
           t.typ                                                               as typ,
@@ -396,8 +405,8 @@ class @Html
             and ( dsk = $dsk )
             and ( oln = $oln )
             and ( trk = $trk ) )
-        insert into #{prefix}_html_mirror ( dsk, oln, trk, pce, typ, tag, atrid, txt )
-          values ( $dsk, $oln, $trk, ( select pce from v1 ), $typ, $tag, $atrid, $txt )
+        insert into #{prefix}_html_mirror ( dsk, oln, col, trk, pce, typ, tag, atrid, txt )
+          values ( $dsk, $oln, $col, $trk, ( select pce from v1 ), $typ, $tag, $atrid, $txt )
           returning *;"""
       #.....................................................................................................
       insert_atr: db.prepare_insert { into: "#{prefix}_html_atrs", returning: null, }
@@ -414,14 +423,14 @@ class @Html
     return ( db.all_first_values SQL"select html from #{prefix}_html_tags_and_html;" ).join ''
 
   #---------------------------------------------------------------------------------------------------------
-  _append_tag: ( dsk, oln, trk, typ, tag, atrs = null, text = null ) ->
+  _append_tag: ( dsk, oln, col, trk, typ, tag, atrs = null, text = null ) ->
     atrid = null
     if atrs?
       { atrid } = @mrg.db.first_row @statements.insert_atrid
       for k, v of atrs
         v = rpr v unless isa.text v
         @statements.insert_atr.run { atrid, k, v, }
-    return @statements.insert_content.get { dsk, oln, trk, typ, tag, atrid, txt: text, }
+    return @statements.insert_content.get { dsk, oln, col, trk, typ, tag, atrid, txt: text, }
 
   #---------------------------------------------------------------------------------------------------------
   parse_dsk: ( cfg ) ->
@@ -429,27 +438,29 @@ class @Html
     { dsk } = cfg
     #.......................................................................................................
     @mrg.db.with_transaction =>
-      for { oln1: oln, wslc, trk, txt, } from @mrg.walk_par_rows { dsk, }
+      for { oln1, wslc, trk, txt, } from @mrg.walk_par_rows { dsk, }
         tokens = @HTMLISH.parse txt
         for d in tokens
+          oln = oln1 + d.delta_lnr ? 0
+          col = d.col
           switch d.$key
-            when '<tag'     then @_append_tag dsk, oln, trk, '<', d.name, d.atrs
-            when '>tag'     then @_append_tag dsk, oln, trk, '>', d.name, d.atrs
-            when '^tag'     then @_append_tag dsk, oln, trk, '^', d.name, d.atrs
-            when '^text'    then @_append_tag dsk, oln, trk, 't', null, null, d.text
+            when '<tag'     then @_append_tag dsk, oln, col, trk, '<', d.name, d.atrs
+            when '>tag'     then @_append_tag dsk, oln, col, trk, '>', d.name, d.atrs
+            when '^tag'     then @_append_tag dsk, oln, col, trk, '^', d.name, d.atrs
+            when '^text'    then @_append_tag dsk, oln, col, trk, 't', null, null, d.text
             when '^comment', '^doctype'
-              @_append_tag dsk, oln, trk, 'r', null, null, d.text.replace /^<!--\s*(.*?)\s*-->$/, '$1'
+              @_append_tag dsk, oln, col, trk, 'r', null, null, d.text.replace /^<!--\s*(.*?)\s*-->$/, '$1'
             when '^error'
               warn '^435345^', "error #{rpr d}"
               atrs = { start: d.start, stop: d.stop, code: d.code, }
-              @_append_tag dsk, oln, trk, 'e', null, atrs, "#{d.message}: #{rpr d.text}"
+              @_append_tag dsk, oln, col, trk, 'e', null, atrs, "#{d.message}: #{rpr d.text}"
             else
               warn '^435345^', "unhandled token #{rpr d}"
               atrs  = { start: d.start, stop: d.stop, code: 'unhandled', }
               d     = { $key: d.$key, name: d.name, type: d.type, }
-              @_append_tag dsk, oln, trk, 'e', null, atrs, "unhandled token: #{rpr d}"
+              @_append_tag dsk, oln, col, trk, 'e', null, atrs, "unhandled token: #{rpr d}"
         for _ in [ 1 .. wslc + 1 ]
-          @_append_tag dsk, oln, trk, 'b', null, null, '\n'
+          @_append_tag dsk, oln, col, trk, 'b', null, null, '\n'
     return null
 
 
