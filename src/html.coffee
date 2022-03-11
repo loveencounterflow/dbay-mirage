@@ -125,6 +125,7 @@ class @Html
           atrid integer not null,
         primary key ( atrid ),
         check ( atrid > 0 and floor( atrid ) = atrid ) );"""
+    #-------------------------------------------------------------------------------------------------------
     db SQL"""
       create table #{prefix}_html_atrs (
           atrid integer not null,
@@ -134,6 +135,7 @@ class @Html
         foreign key ( atrid ) references #{prefix}_html_atrids,
         check ( length( k ) > 0 ) )
         strict;"""
+    #-------------------------------------------------------------------------------------------------------
     db SQL"""
       create table #{prefix}_html_typs (
           typ   text not null,
@@ -142,6 +144,7 @@ class @Html
           unique ( name ),
           check ( length( typ  ) = 1 ),
           check ( length( name ) > 0 ) );"""
+    #-------------------------------------------------------------------------------------------------------
     db SQL"""
       insert into #{prefix}_html_typs values
           ( '<', 'otag'     ),
@@ -151,6 +154,7 @@ class @Html
           ( 't', 'text'     ),
           ( 'r', 'comment'  ),
           ( 'e', 'error'    );"""
+    #-------------------------------------------------------------------------------------------------------
     db SQL"""
       create table #{prefix}_html_mirror (
           dsk     text    not null,                         -- data source key
@@ -169,6 +173,7 @@ class @Html
         foreign key ( atrid ) references #{prefix}_html_atrids,
         check ( length( tag ) > 0 ) );
       create index #{prefix}_html_mirror_tag_idx on #{prefix}_html_mirror ( tag );"""
+    #-------------------------------------------------------------------------------------------------------
     db SQL"""
       create view #{prefix}_html_tags_and_html as select distinct
           t.dsk                                                               as dsk,
