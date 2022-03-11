@@ -123,6 +123,6 @@
   { tag: 'var',                                               },
   { tag: 'video',                                             },
   { tag: 'wbr',          is_empty: true,                      },
-  { tag: 'xmp',          is_empty: true,                      syntax: 'literal',  },
+  { tag: 'xmp',                                               syntax: 'literal',  },
   ]
 
