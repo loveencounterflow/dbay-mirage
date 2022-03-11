@@ -275,7 +275,6 @@ class @Html
       for { oln1, wslc, trk, txt, } from @mrg.walk_par_rows { dsk, }
         tokens = @HTMLISH.parse txt, @_get_non_html_tags()
         for d in tokens
-          debug '^383^', d
           oln = oln1 + d.delta_lnr ? 0
           col = d.col
           switch d.$key

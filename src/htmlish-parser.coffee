@@ -206,34 +206,47 @@ class @Htmlish
 
   #---------------------------------------------------------------------------------------------------------
   $relabel_rawtexts: -> ( d, send ) ->
-    urge '^387^', rpr d.text
     d.$key = '^text' if d.$key is '^rawtext'
     send d
 
-  # #-------------------------------------------------------------------------------------------------------
-  # mr.push $consolidate_texts = do =>
-  #   last          = Symbol 'last'
-  #   # prv_was_text  = false
-  #   send          = null
-  #   collector     = []
-  #   #.....................................................................................................
-  #   flush = ->
-  #     # prv_was_text      = false
-  #     return if collector.length is 0
-  #     d = collector[  0 ]
-  #     if collector.length > 1
-  #       d.text  = ( e.text for e in collector ).join ''
-  #       d.stop  = collector[ collector.length - 1 ].stop
-  #     send d
-  #     collector.length  = 0
-  #   #.....................................................................................................
-  #   return $ { last, }, ( d, _send ) ->
-  #     send = _send
-  #     return flush() if d is last
-  #     unless d.$key is '^text'
-  #       flush()
-  #       return send d
-  #     collector.push d
+  #---------------------------------------------------------------------------------------------------------
+  $consolidate_texts: ->
+    last          = Symbol 'last'
+    # prv_was_text  = false
+    send          = null
+    collector     = []
+    #.......................................................................................................
+    flush = ->
+      # prv_was_text      = false
+      return if collector.length is 0
+      d = collector[  0 ]
+      if collector.length > 1
+        d.text  = ( e.text for e in collector ).join ''
+        d.stop  = collector[ collector.length - 1 ].stop
+      send d
+      collector.length  = 0
+    #.......................................................................................................
+    return $ { last, }, ( d, _send ) ->
+      send = _send
+      return flush() if d is last
+      unless d.$key is '^text'
+        flush()
+        return send d
+      collector.push d
+
+  #---------------------------------------------------------------------------------------------------------
+  $split_lines: -> ( d, send ) =>
+    return send d unless ( d.$key is '^text' )
+    return send d unless ( lines = d.text.split '\n' ).length > 1
+    e = d
+    ### TAINT makes `start`, `stop` invalid (but are thery still needed?) ###
+    for line, idx in lines
+      e       = { e..., }
+      e.oln  += idx
+      e.col   = 1 unless idx is 0
+      e.text  = line
+      send e
+    return null
 
   #---------------------------------------------------------------------------------------------------------
   parse: ( text, non_html_tags = null ) ->
@@ -259,6 +272,7 @@ class @Htmlish
     mr.push @$handle_stack_close            stack
     mr.push @$relabel_rawtexts()
     # mr.push @$consolidate_texts()
+    # mr.push @$split_lines()
     mr.push ( d ) -> R.push d
     mr.drive()
     return R
