@@ -2,27 +2,27 @@ lockfileVersion: 5.3
 
 specifiers:
   cnd: ^9.2.2
-  dbay: 14.1.0
-  guy: 4.1.0
+  dbay: 14.2.0
+  guy: 4.1.1
   hdml: ^1.0.2
   intertext: ^8.0.0
   intertype: ^7.7.0
-  moonriver: 1.0.0
+  moonriver: 1.0.2
   paragate: 4.0.0
   timetunnel: 2.0.0
 
 dependencies:
   cnd: 9.2.2
-  guy: 4.1.0
+  guy: 4.1.1
   hdml: 1.0.2
   intertext: 8.0.0
   intertype: 7.7.0
-  moonriver: 1.0.0
+  moonriver: 1.0.2
   paragate: 4.0.0
   timetunnel: 2.0.0
 
 devDependencies:
-  dbay: 14.1.0
+  dbay: 14.2.0
 
 packages:
 
@@ -94,8 +94,8 @@ packages:
       multimix: 5.0.0
     dev: false
 
-  /dbay/14.1.0:
-    resolution: {integrity: sha512-Ae+eBReebhXnpZjIEVo0bHLh/xOyuCtQzPk+PEXmYC6b9pu+HocYC0Ca4PCLyHEci1k1lySb4RBcZcralFmdTg==}
+  /dbay/14.2.0:
+    resolution: {integrity: sha512-7zSpuBMDvzjeaFDgSpG0Vq0GpFkxFhPwWcNfm6+gsPlpPPqboFf3VqH/u5AHMDcsjr4pc1oBfkzU1bmXUqr8Ag==}
     requiresBuild: true
     dependencies:
       cnd: 9.2.2
@@ -140,8 +140,10 @@ packages:
       letsfreezethat: 3.1.0
     dev: true
 
-  /guy/4.1.0:
-    resolution: {integrity: sha512-QXJuQQAOtoQmjAgp0f7L0zhLYVnuwPS0ODDXeNxPLJZardx9SCTvy8jOtTYXLL+LnATH2Y0XBLq32QmuNlZUqg==}
+  /guy/4.1.1:
+    resolution: {integrity: sha512-UbgOt6JBt+OVR7FJ8Rj9B6M5o6Hllmsu8YDn3Vv6A5J8sI7JhfXOsDbdo60QpvbU8ocSk7/bUrn5KgpcokwxPw==}
+    peerDependencies:
+      exit-hook: 2.2.1
     dependencies:
       cnd: 9.2.2
       intertype: 7.6.7
@@ -219,12 +221,14 @@ packages:
   /letsfreezethat/3.1.0:
     resolution: {integrity: sha512-jJ1nvvQi6unW0WifjNPMIb64Byom0EXzSKWFYA++EpyjK3qv1J2pqeSoEJ61tGJoNG0GoNjPoeLYhxW16riZaA==}
 
-  /moonriver/1.0.0:
-    resolution: {integrity: sha512-Cy90Po7/YejOnW6Jh3TNCfT10HbcQ867G5g9bmq41156esvKvOphHWSWjV9KhA4kiSsYLbCf8S/SCkK4IcU5KQ==}
+  /moonriver/1.0.2:
+    resolution: {integrity: sha512-3w39D2LEgyPVd0xe0hj1lB0CfigxrvSeZ9yEXAwR6M3SkraFdONdpgxxKXMSbzephrLxGkl4xgTPaoLPyyDh4w==}
     dependencies:
       cnd: 9.2.2
-      guy: 4.1.0
+      guy: 4.1.1
       intertype: 7.7.0
+    transitivePeerDependencies:
+      - exit-hook
     dev: false
 
   /multimix/5.0.0:

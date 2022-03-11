@@ -28,16 +28,16 @@
   "homepage": "https://github.com/loveencounterflow/dbay-mirage#readme",
   "dependencies": {
     "cnd": "^9.2.2",
-    "guy": "4.1.0",
+    "guy": "4.1.1",
     "hdml": "^1.0.2",
     "intertext": "^8.0.0",
     "intertype": "^7.7.0",
-    "moonriver": "1.0.0",
+    "moonriver": "1.0.2",
     "paragate": "4.0.0",
     "timetunnel": "2.0.0"
   },
   "devDependencies": {
-    "dbay": "14.1.0"
+    "dbay": "14.2.0"
   },
   "peerDependencies": {
     "dbay": "^10.121.1"
