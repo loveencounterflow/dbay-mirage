@@ -1,4 +1,10 @@
 
+@syntaxes = [
+  { syntax: 'html',    remove_backslashes: true,  expand_ncrs: true, escape_ltamp: true, },
+  { syntax: 'script',  remove_backslashes: true,  expand_ncrs: true, escape_ltamp: false, },
+  { syntax: 'literal', remove_backslashes: true,  expand_ncrs: true, escape_ltamp: true, },
+  ]
+
 @tags = [
   { tag: 'a',                                                 },
   { tag: 'abbr',                                              },

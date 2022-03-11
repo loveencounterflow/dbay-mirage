@@ -53,13 +53,14 @@ class @Html
 
   #---------------------------------------------------------------------------------------------------------
   constructor: ( cfg ) ->
-    @cfg      = { @constructor.C.defaults.constructor_cfg..., cfg..., }
+    @cfg              = { @constructor.C.defaults.constructor_cfg..., cfg..., }
     GUY.props.hide @, 'types', types
     @types.validate.constructor_cfg @cfg
-    { mrg, }  = GUY.obj.pluck_with_fallback @cfg, null, 'mrg'
+    { mrg, }          = GUY.obj.pluck_with_fallback @cfg, null, 'mrg'
     GUY.props.hide @, 'mrg', mrg
     GUY.props.hide @, 'HTMLISH', HTMLISH
-    @cfg      = GUY.lft.freeze @cfg
+    @cfg              = GUY.lft.freeze @cfg
+    @_syntax_catalog  = null
     @_set_variables?()
     @_create_sql_functions?()
     @_procure_infrastructure?()
@@ -79,15 +80,16 @@ class @Html
       varargs:        false
       deterministic:  true
       start:          null
-      step:           ( Σ, typ, tag, k, v, txt ) ->
-        Σ            ?= { typ, tag, atrs: {}, txt, }
-        Σ.atrs[ k ]   = v if k?
+      step:           ( Σ, typ, tag, syntax, k, v, txt ) =>
+        { escape_ltamp }  = @_syntax_catalog[ syntax ]
+        Σ                ?= { typ, tag, atrs: {}, txt, escape_ltamp, }
+        Σ.atrs[ k ]       = v if k?
         return Σ
       inverse:        ( Σ, dropped ) -> return null unless Σ?; delete Σ.atrs[ k ]; Σ
       result:         ( Σ ) ->
         return '' unless Σ?
         return switch Σ.typ
-          when 't' then HDML.escape_text Σ.txt
+          when 't' then if Σ.escape_ltamp then HDML.escape_text Σ.txt else Σ.txt
           when 'r' then "<!-- #{HDML.escape_text Σ.txt} -->"
           when 'b' then '\n'
           when 'e' then ( HDML.create_tag '<', 'error', Σ.atrs  ) + \
@@ -116,7 +118,10 @@ class @Html
     #-------------------------------------------------------------------------------------------------------
     db SQL"""
       create table #{prefix}_html_syntaxes (
-          syntax    text    not null primary key );"""
+          syntax              text    not null primary key,
+          remove_backslashes  boolean not null default false,
+          expand_ncrs         boolean not null default false,
+          escape_ltamp        boolean not null default false );"""
     #-------------------------------------------------------------------------------------------------------
     db SQL"""
       create table #{prefix}_html_tags (
@@ -182,16 +187,16 @@ class @Html
     #-------------------------------------------------------------------------------------------------------
     db SQL"""
       create view #{prefix}_html_tags_and_html as select distinct
-          t.dsk                                                               as dsk,
-          t.oln                                                               as oln,
-          t.col                                                               as col,
-          t.trk                                                               as trk,
-          t.pce                                                               as pce,
-          t.typ                                                               as typ,
-          t.tag                                                               as tag,
-          t.syntax                                                            as syntax,
-          t.atrid                                                             as atrid,
-          #{prefix}_html_create_tag( t.typ, t.tag, a.k, a.v, t.txt ) over w   as html
+          t.dsk                                                                       as dsk,
+          t.oln                                                                       as oln,
+          t.col                                                                       as col,
+          t.trk                                                                       as trk,
+          t.pce                                                                       as pce,
+          t.typ                                                                       as typ,
+          t.tag                                                                       as tag,
+          t.syntax                                                                    as syntax,
+          t.atrid                                                                     as atrid,
+          #{prefix}_html_create_tag( t.typ, t.tag, t.syntax, a.k, a.v, t.txt ) over w as html
         from
           #{prefix}_html_mirror as t
           left join #{prefix}_html_atrs as a using ( atrid )
@@ -212,23 +217,34 @@ class @Html
     { db          } = @mrg
     { insert_syntax
       insert_tag  } = @statements
-    seen_syntaxes   = new Set()
+    html_data       = require './data-html5-tags'
     #.......................................................................................................
     db =>
       try
-        for d in ( require './data-html5-tags' ).tags
+        for d in html_data.syntaxes
+          syntax              = d.syntax
+          remove_backslashes  = if d.remove_backslashes then 1 else 0
+          expand_ncrs         = if d.expand_ncrs        then 1 else 0
+          escape_ltamp        = if d.escape_ltamp       then 1 else 0
+          insert_syntax.run { syntax, remove_backslashes, expand_ncrs, escape_ltamp, }
+      catch error
+        throw new db.E.DBay_internal_error '^mirage-html@1^', \
+          "when trying to insert #{rpr d}, an error occurred: #{error.message}"
+    #.......................................................................................................
+    db =>
+      try
+        for d in html_data.tags
           tag       = d.tag
           is_empty  = if d.is_empty then 1 else 0
           is_block  = if d.is_block then 1 else 0
           syntax    = d.syntax ? 'html'
-          unless seen_syntaxes.has syntax
-            seen_syntaxes.add syntax
-            insert_syntax.run { syntax, }
           insert_tag.run { tag, is_empty, is_block, syntax, }
       catch error
-        throw new db.E.DBay_internal_error '^mirage-html@1^', \
-          "when trying to insert #{rpr d} or #{rpr { syntax, }}, an error occurred: #{error.message}"
+        throw new db.E.DBay_internal_error '^mirage-html@2^', \
+          "when trying to insert #{rpr d}, an error occurred: #{error.message}"
     #.......................................................................................................
+    ### TAINT caching this value means we must be careful with additions; use better solution ###
+    @_syntax_catalog = freeze @_get_syntax_catalog()
     return null
 
   #---------------------------------------------------------------------------------------------------------
@@ -281,11 +297,18 @@ class @Html
 
   #---------------------------------------------------------------------------------------------------------
   ### TAINT consider to cache ###
+  _get_syntax_catalog: -> @mrg.db.as_object 'syntax', SQL"""
+    select
+        *
+      from #{@cfg.prefix}_html_syntaxes;"""
+
+  #---------------------------------------------------------------------------------------------------------
+  ### TAINT consider to cache ###
   _get_tag_catalog: -> @mrg.db.as_object 'tag', SQL"""
-      select
-          *
-        from #{@cfg.prefix}_html_tags
-        where ( syntax != 'html' ) or ( is_block ) or ( is_empty );"""
+    select
+        *
+      from #{@cfg.prefix}_html_tags
+      where ( syntax != 'html' ) or ( is_block ) or ( is_empty );"""
 
   #---------------------------------------------------------------------------------------------------------
   parse_dsk: ( cfg ) ->
