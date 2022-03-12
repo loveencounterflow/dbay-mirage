@@ -56,14 +56,14 @@
     * <i>**bold**</i>: **bold** inside of <i>italic</i>
 
 * italic link
-  * `[this page](/blob/main/README-htmlish-syntax.md)`
-    * [this page](/blob/main/README-htmlish-syntax.md)
-  * `*[this page](/blob/main/README-htmlish-syntax.md)*`
-    * *[this page](/blob/main/README-htmlish-syntax.md)*
-  * `<em>[this page](/blob/main/README-htmlish-syntax.md)</em>`
-    * <em>[this page](/blob/main/README-htmlish-syntax.md)</em>
-  * `*<a href='/blob/main/README-htmlish-syntax.md'>this page</a>*`
-    * *<a href='/blob/main/README-htmlish-syntax.md'>this page</a>*
+  * `[this page](/README-htmlish-syntax.md)`
+    * [this page](/README-htmlish-syntax.md)
+  * `*[this page](/README-htmlish-syntax.md)*`
+    * *[this page](/README-htmlish-syntax.md)*
+  * `<em>[this page](/README-htmlish-syntax.md)</em>`
+    * <em>[this page](/README-htmlish-syntax.md)</em>
+  * `*<a href='/README-htmlish-syntax.md'>this page</a>*`
+    * *<a href='/README-htmlish-syntax.md'>this page</a>*
 
 ## To Do
 
