@@ -48,9 +48,11 @@
 ## Mixing Markdownish and HTMLish
 
 * HTML nested inside Markdown
-  * *<b>bold</b>*: **bold** and <i>italic</i>
+  * `*<b>bold</b>*: <b>bold</b> and *italic*`
+    * *<b>bold</b>*: <b>bold</b> and *italic*
 * Markdown nested inside HTML
-  * <i>**bold**</i>: **bold** and <i>italic</i>
+  * `<i>**bold**</i>: **bold** and <i>italic</i>`
+    * <i>**bold**</i>: **bold** and <i>italic</i>
 
 ## To Do
 
