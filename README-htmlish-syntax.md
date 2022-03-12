@@ -9,6 +9,7 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [𓆤DBay 𓁛Mirage HTMLish Syntax](#%F0%93%86%A4dbay-%F0%93%81%9Bmirage-htmlish-syntax)
+  - [Mixing Markdownish and HTMLish](#mixing-markdownish-and-htmlish)
   - [To Do](#to-do)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -44,6 +45,12 @@
     equivalent)
   * any tag without content can be written in its short form, so e.g. `<div/>` is allowed (as is `<div//`)
 
+## Mixing Markdownish and HTMLish
+
+* HTML nested inside Markdown
+  * *<b>bold</b>*: **bold** and <i>italic</i>
+* Markdown nested inside HTML
+  * <i>**bold**</i>: **bold** and <i>italic</i>
 
 ## To Do
 
