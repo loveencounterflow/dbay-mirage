@@ -326,10 +326,6 @@ class @Mrg
         into:       prefix + '_mirror',
         fields:     [ 'dsk', 'oln', 'trk', 'pce', ], }
       #.....................................................................................................
-      append_line_to_mirror: SQL"""
-        insert into #{prefix}_mirror ( dsk, oln, trk )
-          values ( $dsk, ( select oln from #{prefix}_next_free_oln ), $trk )
-          returning *;"""
       next_free_oln: SQL"""select
           coalesce( max( oln ), 0 ) + 1 as oln
         from #{prefix}_mirror
@@ -338,10 +334,6 @@ class @Mrg
           and ( trk = $trk )
         limit 1;"""
       #.....................................................................................................
-      append_text_to_raw_mirror: SQL"""
-        insert into #{prefix}_raw_mirror ( dsk, oln, trk, par, txt )
-          values ( $dsk, $oln, $trk, $par, $text )
-          returning *;"""
       next_free_par: SQL"""select
           coalesce( max( par ), 0 ) + 1 as par
         from #{prefix}_raw_mirror
