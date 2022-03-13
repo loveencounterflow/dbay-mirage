@@ -445,8 +445,6 @@ class @Mrg
       text    } = cfg
     { prefix  } = @cfg
     counts      = { files: 0, bytes: 0, }
-    @db.setv 'dsk', dsk
-    @db.setv 'trk', trk
     oln         = ( @_get_next_free_oln { dsk, trk, } ) - 1
     iterator    = text.split '\n'
     @allowing_change_on_mirror => @_insert_lines { dsk, oln, trk, counts, iterator, }
