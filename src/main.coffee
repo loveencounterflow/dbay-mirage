@@ -173,7 +173,6 @@ class @Mrg
     @db SQL"""
       drop view   if exists _#{prefix}_ws_linecounts;
       drop view   if exists #{prefix}_paragraphs;
-      drop view   if exists #{prefix}_next_free_oln;
       drop table  if exists #{prefix}_raw_mirror;
       drop table  if exists #{prefix}_mirror;
       drop table  if exists #{prefix}_datasources;"""
@@ -265,15 +264,6 @@ class @Mrg
           order by mirror.dsk, mirror.oln, mirror.trk, mirror.pce
           range between unbounded preceding and unbounded following )
         order by mirror.dsk, mirror.oln, mirror.trk, mirror.pce;"""
-    #.......................................................................................................
-    @db SQL"""
-      create view #{prefix}_next_free_oln as select
-          coalesce( max( oln ), 0 ) + 1 as oln
-        from #{prefix}_mirror
-        where true
-          and ( dsk = std_getv( 'dsk' ) )
-          and ( trk = std_getv( 'trk' ) )
-        limit 1;"""
     # #-------------------------------------------------------------------------------------------------------
     # TRIGGERS
     #.......................................................................................................
@@ -340,11 +330,25 @@ class @Mrg
         insert into #{prefix}_mirror ( dsk, oln, trk )
           values ( $dsk, ( select oln from #{prefix}_next_free_oln ), $trk )
           returning *;"""
+      next_free_oln: SQL"""select
+          coalesce( max( oln ), 0 ) + 1 as oln
+        from #{prefix}_mirror
+        where true
+          and ( dsk = $dsk )
+          and ( trk = $trk )
+        limit 1;"""
       #.....................................................................................................
       append_text_to_raw_mirror: SQL"""
         insert into #{prefix}_raw_mirror ( dsk, oln, trk, par, txt )
           values ( $dsk, $oln, $trk, $par, $text )
           returning *;"""
+      next_free_par: SQL"""select
+          coalesce( max( par ), 0 ) + 1 as par
+        from #{prefix}_raw_mirror
+        where true
+          and ( dsk = $dsk )
+          and ( trk = $trk )
+        limit 1;"""
       # #.....................................................................................................
       # insert_lnpart: @db.create_insert {
       #   into:       prefix + '_mirror',
@@ -486,6 +490,9 @@ class @Mrg
     #.......................................................................................................
     return counts
 
+  #---------------------------------------------------------------------------------------------------------
+  _get_next_free_oln: ( cfg ) -> @db.single_value @sql.next_free_oln, cfg
+  _get_next_free_par: ( cfg ) -> @db.single_value @sql.next_free_par, cfg
 
   #=========================================================================================================
   # CONTENT RETRIEVAL
