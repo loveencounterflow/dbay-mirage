@@ -393,27 +393,6 @@ class @Mrg
       @db.setv 'allow_change_on_mirror', allow_change_on_mirror
 
   #---------------------------------------------------------------------------------------------------------
-  append_text: ( cfg ) ->
-    validate.mrg_append_text_cfg ( cfg = { @constructor.C.defaults.mrg_append_text_cfg..., cfg..., } )
-    { dsk
-      trk
-      text    } = cfg
-    { prefix  } = @cfg
-    lines       = text.split '\n'
-    R           = []
-    @db.setv 'dsk', dsk
-    @db.setv 'trk', trk
-    @allowing_change_on_mirror =>
-      for line in lines
-        d = @db.first_row @sql.append_line_to_mirror, { dsk, trk, }
-        ### TAINT get `par` from DB ###
-        debug '^32243^', d
-        R.push @db.first_row @sql.append_text_to_raw_mirror, \
-          { dsk, oln: d.oln, trk, pce: d.pce, par, text: line, }
-      return null
-    return R
-
-  #---------------------------------------------------------------------------------------------------------
   _ds_entry_from_dsk: ( dsk ) -> @db.single_row @sql.ds_entry_from_dsk, { dsk, }
   _update_digest: ( dsk, digest ) -> @db @sql.update_digest, { dsk, digest, }
 
@@ -440,7 +419,6 @@ class @Mrg
       url
       digest      } = @_ds_entry_from_dsk dsk
     ### NOTE may become configurable per instance, per datasource ###
-    trim_line_ends  = @constructor.C.trim_line_ends
     unless path?
       throw new Error "^Mirage/refresh_datasource@1^ unable to refresh datasource #{rpr dsk} (URL: #{rpr url})"
     current_digest  = GUY.fs.get_content_hash path
@@ -449,26 +427,9 @@ class @Mrg
     if force or ( digest isnt current_digest )
       #.....................................................................................................
       @db =>
+        iterator = GUY.fs.walk_lines path, { decode: false, }
         @_delete_lines dsk
-        insert_line_into_mirror     = @db.prepare @sql.insert_line_into_mirror
-        insert_line_into_raw_mirror = @db.prepare @sql.insert_line_into_raw_mirror
-        oln                         = 0
-        par                         = 0
-        within_par                  = false
-        #...................................................................................................
-        for line from GUY.fs.walk_lines path, { decode: false, }
-          oln++
-          counts.bytes   += line.length
-          txt             = line.toString 'utf-8'
-          txt             = txt.trimEnd() if trim_line_ends
-          if txt is ''
-            within_par  = false
-          else unless within_par
-            within_par = true
-            par++
-          ### TAINT reduce to single statement ###
-          insert_line_into_mirror.run     { dsk, oln, }
-          insert_line_into_raw_mirror.run { dsk, oln, par, txt, }
+        @_insert_lines { dsk, oln: 0, counts, iterator, }
         #...................................................................................................
         counts.files++
         @_update_digest dsk, current_digest
@@ -477,8 +438,63 @@ class @Mrg
     return counts
 
   #---------------------------------------------------------------------------------------------------------
+  append_text: ( cfg ) ->
+    validate.mrg_append_text_cfg ( cfg = { @constructor.C.defaults.mrg_append_text_cfg..., cfg..., } )
+    { dsk
+      trk
+      text    } = cfg
+    { prefix  } = @cfg
+    counts      = { files: 0, bytes: 0, }
+    @db.setv 'dsk', dsk
+    @db.setv 'trk', trk
+    oln         = @_get_next_free_oln { dsk, trk, }
+    oln++
+    iterator    = text.split '\n'
+    @allowing_change_on_mirror => @_insert_lines { dsk, oln, trk, counts, iterator, }
+    return counts
+
+  #---------------------------------------------------------------------------------------------------------
   _get_next_free_oln: ( cfg ) -> @db.single_value @sql.next_free_oln, cfg
   _get_next_free_par: ( cfg ) -> @db.single_value @sql.next_free_par, cfg
+
+  #---------------------------------------------------------------------------------------------------------
+  _insert_lines: ( cfg ) ->
+    { dsk
+      oln
+      trk
+      counts
+      iterator }                = cfg
+    { prefix }                  = @cfg
+    insert_line_into_mirror     = @db.prepare @sql.insert_line_into_mirror
+    insert_line_into_raw_mirror = @db.prepare @sql.insert_line_into_raw_mirror
+    par                         = ( @_get_next_free_par { dsk, trk, } ) - 1
+    within_par                  = false
+    trim_line_ends              = @constructor.C.trim_line_ends
+    #.......................................................................................................
+    for line from iterator
+      oln++
+      counts.bytes   += line.length
+      txt             = line.toString 'utf-8'
+      txt             = txt.trimEnd() if trim_line_ends
+      if txt is ''
+        within_par  = false
+      else unless within_par
+        within_par = true
+        par++
+      try
+        row = { dsk, oln, par, txt, }
+        debug '^4458^', row
+        ### TAINT reduce to single statement ###
+        insert_line_into_mirror.run     row
+        insert_line_into_raw_mirror.run row
+      catch error
+        if error.code is 'SQLITE_CONSTRAINT_PRIMARYKEY'
+          throw new @db.E.DBay_internal_error '^dbay-mirage@1^', \
+            "not unique in mrg_mirror or mrg_raw_mirror: #{rpr row}"
+        throw error
+    #.......................................................................................................
+    return null
+
 
   #=========================================================================================================
   # CONTENT RETRIEVAL
