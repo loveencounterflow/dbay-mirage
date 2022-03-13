@@ -436,13 +436,7 @@ class @Mrg
   _path_from_url: ( url  ) -> URL.fileURLToPath url
 
   #---------------------------------------------------------------------------------------------------------
-  refresh_datasource: ( cfg ) ->
-    @db.setv 'allow_change_on_mirror', 1
-    try
-      R = @_refresh_datasource cfg
-    finally
-      @db.setv 'allow_change_on_mirror', 0
-    return R
+  refresh_datasource: ( cfg ) -> @allowing_change_on_mirror => @_refresh_datasource cfg
 
   #---------------------------------------------------------------------------------------------------------
   _refresh_datasource: ( cfg ) ->
