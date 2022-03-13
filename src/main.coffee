@@ -234,10 +234,10 @@ class @Mrg
           raw_mirror.trk                                as trk,
           raw_mirror.pce                                as pce,
           raw_mirror.par                                as par,
-          count( * ) over w                             as wslc -- white space line count
+          count( not raw_mirror.mat ) over w            as wslc -- white space line count
         from #{prefix}_raw_mirror as raw_mirror
         join #{prefix}_mirror     as mirror using ( dsk, oln, trk, pce )
-        where mirror.act and not raw_mirror.mat
+        where mirror.act
         window w as (
           partition by raw_mirror.par
           order by mirror.dsk, mirror.oln, mirror.trk, mirror.pce
