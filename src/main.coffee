@@ -483,7 +483,6 @@ class @Mrg
         par++
       try
         row = { dsk, oln, par, txt, }
-        debug '^4458^', row
         ### TAINT reduce to single statement ###
         insert_line_into_mirror.run     row
         insert_line_into_raw_mirror.run row
