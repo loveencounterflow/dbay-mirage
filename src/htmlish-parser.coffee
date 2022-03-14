@@ -91,6 +91,22 @@ class @Htmlish
     R.stop  = stop
     return R
 
+
+  #=========================================================================================================
+  #
+  #---------------------------------------------------------------------------------------------------------
+  $tunnel: ( tunnel_wrap ) -> ( text, send ) =>
+    { text
+      reveal          } = @_tunnel text
+    tunnel_wrap.reveal  = reveal
+    send text
+    return null
+
+  #---------------------------------------------------------------------------------------------------------
+  $reveal_tunneled_text: ( tunnel_wrap ) -> ( d, send ) =>
+    return send d unless ( d.$key is '^text' ) or ( d.$key is '^rawtext' )
+    d.text = tunnel_wrap.reveal d.text
+    send d
   #---------------------------------------------------------------------------------------------------------
   $add_location: -> ( d, send ) =>
     [ lnr
@@ -167,12 +183,6 @@ class @Htmlish
       if ( /(?<!\\)[<&]/.test d.text )
         @_as_error d, '^ð1^', 'bareachrs', "bare active characters"
     #.....................................................................................................
-    send d
-
-  #---------------------------------------------------------------------------------------------------------
-  $reveal_tunneled_text: ( reveal ) -> ( d, send ) =>
-    return send d unless ( d.$key is '^text' ) or ( d.$key is '^rawtext' )
-    d.text = reveal d.text
     send d
 
   #---------------------------------------------------------------------------------------------------------
@@ -269,25 +279,28 @@ class @Htmlish
       send e
     return null
 
+    { text
+      reveal  }   = @_tunnel text
+
   #---------------------------------------------------------------------------------------------------------
   parse: ( text, tag_catalog = null ) ->
     ### TAINT use `cfg` pattern ###
     ### TAINT do not reconstruct pipeline on each run ###
-    { text
-      reveal  }   = @_tunnel text
     tokens        = thaw _HTMLISH.parse text
     stack         = []
+    tunnel_wrap    = {}
     R             = []
     mr            = new Moonriver()
     #-------------------------------------------------------------------------------------------------------
     mr.push tokens
+    mr.push @$tunnel                        tunnel_wrap
     mr.push @$add_location()
     mr.push @$set_syntax_on_otag            tag_catalog if tag_catalog?
     mr.push @$convert_nonhtml_syntax()                  if tag_catalog?
     mr.push @$set_syntax_on_other_tokens    tag_catalog if tag_catalog?
     mr.push @$parse_ncrs()
     mr.push @$complain_about_bareachrs()
-    mr.push @$reveal_tunneled_text          reveal
+    mr.push @$reveal_tunneled_text          tunnel_wrap
     mr.push @$remove_backslashes()
     mr.push @$treat_xws_in_opening_tags()
     mr.push @$treat_xws_in_closing_tags()
