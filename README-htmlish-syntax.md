@@ -9,6 +9,7 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [𓆤DBay 𓁛Mirage HTMLish Syntax](#%F0%93%86%A4dbay-%F0%93%81%9Bmirage-htmlish-syntax)
+  - [Swappers](#swappers)
   - [Mixing Markdownish and HTMLish](#mixing-markdownish-and-htmlish)
   - [To Do](#to-do)
 
@@ -44,6 +45,20 @@
   * tags declared to be 'empty' can be written both with and without closing slash (`<br>` and `<br/>` are
     equivalent)
   * any tag without content can be written in its short form, so e.g. `<div/>` is allowed (as is `<div//`)
+
+## Swappers
+
+Swappers are sign posts in the source text that delineate regions of different syntax.
+
+* in HTMLish,
+  * `/<script\b/g` starts a script. Inside a script block, no tags or Markdownish syntax is recognized
+    except for the closing `/<\/script>/g`.
+  * `/<xmp\b/g` starts a literal block; inside a literal block, no tags (except the closing one) and no
+    Markdownish markup is recognized and characters like `<` and `&` do not have to be escaped or replaced
+    by entities. Closed by `/<\/xmp>/g`.
+* in Markdownish,
+  * `/```/g` starts a so-called Fenced Code Block (FCB); closed by `/```/g`
+
 
 ## Mixing Markdownish and HTMLish
 
