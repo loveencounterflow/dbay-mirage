@@ -32,6 +32,7 @@
     "hdml": "^1.0.2",
     "intertext": "^8.0.0",
     "intertype": "^7.7.0",
+    "markdown-it": "^12.3.2",
     "moonriver": "1.0.2",
     "paragate": "4.0.0",
     "timetunnel": "2.0.0"
