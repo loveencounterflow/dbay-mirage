@@ -172,6 +172,7 @@ class @Mrg
     @db.set_foreign_keys_state false
     @db SQL"""
       drop view   if exists _#{prefix}_ws_linecounts;
+      drop view   if exists #{prefix}_lines;
       drop view   if exists #{prefix}_paragraphs;
       drop table  if exists #{prefix}_raw_mirror;
       drop table  if exists #{prefix}_mirror;
@@ -225,6 +226,17 @@ class @Mrg
       create index #{prefix}_raw_mirror_mat on #{prefix}_raw_mirror ( mat );
       create index #{prefix}_raw_mirror_par on #{prefix}_raw_mirror ( par );
       create index #{prefix}_raw_mirror_txt on #{prefix}_raw_mirror ( txt );"""
+    #.......................................................................................................
+    @db SQL"""
+      create view #{prefix}_lines as select
+          *
+        from #{prefix}_raw_mirror as raw_mirror
+        join #{prefix}_mirror     as mirror using ( dsk, oln, trk, pce )
+        where true
+          and  mirror.act
+          and ( raw_mirror.dsk = std_getv( 'dsk' ) )
+          and ( raw_mirror.trk = std_getv( 'trk' ) )
+        order by dsk, oln, trk, pce;"""
     #.......................................................................................................
     @db SQL"""
       create view _#{prefix}_ws_linecounts as select distinct
@@ -499,13 +511,15 @@ class @Mrg
   get_line_rows:  ( cfg ) -> [ ( @walk_line_rows cfg )..., ]
   get_par_rows:   ( cfg ) -> [ ( @walk_par_rows  cfg )..., ]
 
-  # #---------------------------------------------------------------------------------------------------------
-  # walk_line_rows: ( cfg ) ->
-  #   validate.mrg_walk_line_rows_cfg ( cfg = { @constructor.C.defaults.mrg_walk_line_rows_cfg..., cfg..., } )
-  #   { dsk       } = cfg
-  #   { prefix    } = @cfg
-  #   @db.setv 'dsk', dsk
-  #   return @db SQL"select * from #{prefix}_lines;"
+  #---------------------------------------------------------------------------------------------------------
+  walk_line_rows: ( cfg ) ->
+    validate.mrg_walk_line_rows_cfg ( cfg = { @constructor.C.defaults.mrg_walk_line_rows_cfg..., cfg..., } )
+    { dsk
+      trk       } = cfg
+    { prefix    } = @cfg
+    @db.setv 'dsk', dsk
+    @db.setv 'trk', trk ? 1
+    return @db SQL"select * from #{prefix}_lines;"
 
   #---------------------------------------------------------------------------------------------------------
   walk_par_rows: ( cfg ) ->
