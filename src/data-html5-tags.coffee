@@ -1,9 +1,18 @@
 
 @syntaxes = [
-  { syntax: 'html',    remove_backslashes: true,  expand_ncrs: true, escape_ltamp: true, },
-  { syntax: 'script',  remove_backslashes: true,  expand_ncrs: true, escape_ltamp: false, },
-  { syntax: 'literal', remove_backslashes: true,  expand_ncrs: true, escape_ltamp: true, },
+  { syntax: 'html',     remove_backslashes: true,  expand_ncrs: true, escape_ltamp: true, },
+  { syntax: 'script',   remove_backslashes: true,  expand_ncrs: true, escape_ltamp: false, },
+  { syntax: 'literal',  remove_backslashes: true,  expand_ncrs: true, escape_ltamp: true, },
+  { syntax: 'code',     remove_backslashes: true,  expand_ncrs: true, escape_ltamp: true, },
   ]
+
+@swappers = [
+  { name: 'html_script', open: /<script\b/g, close: /<\/script>/g, environment: 'html', syntax: 'script',   }
+  { name: 'html_codeb',  open: /<code\b/g,   close: /<\/code>/g,   environment: 'html', syntax: 'code',     }
+  { name: 'html_xmp',    open: /<xmp\b/g,    close: /<\/xmp>/g,    environment: 'html', syntax: 'literal',  }
+  { name: 'md_fcb',      either: /```/g,                           environment: 'md',   syntax: 'code',     }
+  ]
+
 
 @tags = [
   { tag: 'a',                                                 },
