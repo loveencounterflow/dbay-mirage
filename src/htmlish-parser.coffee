@@ -107,6 +107,38 @@ class @Htmlish
     return send d unless ( d.$key is '^text' ) or ( d.$key is '^rawtext' )
     d.text = tunnel_wrap.reveal d.text
     send d
+
+  #---------------------------------------------------------------------------------------------------------
+  $transpile_markdownish: ->
+    mdit_cfg =
+      html:         true          # Enable HTML tags in source
+      xhtmlOut:     false         # Use '/' to close single tags (<br />).
+      breaks:       false         # Convert '\n' in paragraphs into <br>
+      langPrefix:   'language-'   # CSS language prefix for fenced blocks.
+      linkify:      false         # Autoconvert URL-like text to links
+      typographer:  false         # see https://github.com/markdown-it/markdown-it/blob/master/lib/rules_core/replacements.js
+      quotes:       '“”‘’'        # '„“‚‘' for German, ['«\xA0', '\xA0»', '‹\xA0', '\xA0›'] for French
+      highlight:    null          # function (/*str, lang*/) { return ''; }
+    # md = ( require 'markdown-it' ) 'zero'
+    md = ( require 'markdown-it' ) mdit_cfg
+    md.enable 'emphasis'
+    # md.enable 'autolink'
+    md.enable 'backticks'
+    # md.enable 'entity'
+    # md.enable 'escape'
+    # md.enable 'html_inline'
+    # md.enable 'image'
+    md.enable 'link'
+    # md.enable 'newline'
+    # md.enable 'text'
+    # md.enable 'balance_pairs'
+    # md.enable 'text_collapse'
+    md.disable 'smartquotes'
+    return ( text, send ) => send md.renderInline text
+
+  #---------------------------------------------------------------------------------------------------------
+  $parse_htmlish: -> ( text, send ) => send d for d in thaw _HTMLISH.parse text
+
   #---------------------------------------------------------------------------------------------------------
   $add_location: -> ( d, send ) =>
     [ lnr
@@ -286,14 +318,15 @@ class @Htmlish
   parse: ( text, tag_catalog = null ) ->
     ### TAINT use `cfg` pattern ###
     ### TAINT do not reconstruct pipeline on each run ###
-    tokens        = thaw _HTMLISH.parse text
-    stack         = []
     tunnel_wrap    = {}
     R             = []
     mr            = new Moonriver()
     #-------------------------------------------------------------------------------------------------------
-    mr.push tokens
+    mr.push [ text, ]
     mr.push @$tunnel                        tunnel_wrap
+    mr.push @$transpile_markdownish()
+    mr.push ( text ) -> urge '^394^', rpr text
+    mr.push @$parse_htmlish()
     mr.push @$add_location()
     mr.push @$set_syntax_on_otag            tag_catalog if tag_catalog?
     mr.push @$convert_nonhtml_syntax()                  if tag_catalog?
