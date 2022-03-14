@@ -199,25 +199,31 @@ class @Htmlish
     send d
 
   #---------------------------------------------------------------------------------------------------------
-  $handle_stack_open: ( stack ) -> ( d, send ) =>
-    stack.push d if ( d.$key is '<tag' ) # and ( d.type is 'ctag' )
-    send d
-
-  #---------------------------------------------------------------------------------------------------------
-  $handle_stack_close: ( stack ) -> ( d, send ) =>
-    return send d unless ( d.$key is '>tag' )
-    #.....................................................................................................
-    if stack.length is 0
-      return send @_as_error d, '^ð2^', 'xtractag', "extraneous closing tag </#{d.name}>"
-    #.....................................................................................................
-    matching_d = stack.pop()
-    if d.name?
-      if ( d.name != matching_d.name )
-        return send @_as_error d, '^ð2^', 'nomatch', "expected </#{matching_d.name}>, got </#{d.name}>"
-    #...................................................................................................
-    else
-      d.name = matching_d.name
-    send d
+  $validate_paired_tags: ->
+    stack = []
+    return ( d, send ) =>
+      if ( d.$key is '<tag' )
+        stack.push d
+        send d
+      #.....................................................................................................
+      else if ( d.$key is '>tag' )
+        #...................................................................................................
+        if stack.length is 0
+          return send @_as_error d, '^ð2^', 'xtractag', "extraneous closing tag </#{d.name}>"
+        #...................................................................................................
+        matching_d = stack.pop()
+        if d.name?
+          if ( d.name != matching_d.name )
+            return send @_as_error d, '^ð2^', 'nomatch', "expected </#{matching_d.name}>, got </#{d.name}>"
+        #...................................................................................................
+        else
+          d.name = matching_d.name
+        send d
+      #.....................................................................................................
+      else
+        send d
+      #.....................................................................................................
+      return null
 
   #---------------------------------------------------------------------------------------------------------
   $relabel_rawtexts: -> ( d, send ) ->
@@ -285,8 +291,8 @@ class @Htmlish
     mr.push @$remove_backslashes()
     mr.push @$treat_xws_in_opening_tags()
     mr.push @$treat_xws_in_closing_tags()
-    mr.push @$handle_stack_open             stack
-    mr.push @$handle_stack_close            stack
+    # mr.push ( d ) -> urge '^432^', d.$key[ 0 ] + d.name if d.name?
+    mr.push @$validate_paired_tags()
     mr.push @$relabel_rawtexts()
     # mr.push @$consolidate_texts()
     # mr.push @$split_lines()
