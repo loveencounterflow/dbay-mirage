@@ -6,7 +6,7 @@
   { syntax: 'code',     remove_backslashes: true,  expand_ncrs: true, escape_ltamp: true, },
   ]
 
-@swappers = [
+@fences = [
   { name: 'html_script', open: /<script\b/g, close: /<\/script>/g, environment: 'html', syntax: 'script',   }
   { name: 'html_codeb',  open: /<code\b/g,   close: /<\/code>/g,   environment: 'html', syntax: 'code',     }
   { name: 'html_xmp',    open: /<xmp\b/g,    close: /<\/xmp>/g,    environment: 'html', syntax: 'literal',  }

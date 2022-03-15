@@ -60,7 +60,7 @@ class @Html
     GUY.props.hide @, 'mrg', mrg
     GUY.props.hide @, 'HTMLISH', HTMLISH
     @cfg              = GUY.lft.freeze @cfg
-    @_swapper_catalog = null
+    @_fence_catalog   = null
     @_syntax_catalog  = null
     @_set_variables?()
     @_create_sql_functions?()
@@ -110,8 +110,8 @@ class @Html
       drop  index if exists #{prefix}_html_mirror_tag_idx;
       drop  view  if exists #{prefix}_html_tags_and_html;
       drop  table if exists #{prefix}_html_syntaxes;
-      drop  table if exists #{prefix}_html_swapper_matches;
-      drop  table if exists #{prefix}_html_swappers;
+      drop  table if exists #{prefix}_html_fence_matches;
+      drop  table if exists #{prefix}_html_fences;
       drop  table if exists #{prefix}_html_tags;
       drop  table if exists #{prefix}_html_typs;
       drop  table if exists #{prefix}_html_atrs;
@@ -127,7 +127,7 @@ class @Html
           escape_ltamp        boolean not null default false );"""
     #-------------------------------------------------------------------------------------------------------
     db SQL"""
-      create table #{prefix}_html_swappers (
+      create table #{prefix}_html_fences (
           name                text    not null primary key,
           syntax              text    not null references #{prefix}_html_syntaxes,
           environment         text    not null,
@@ -139,7 +139,7 @@ class @Html
     #-------------------------------------------------------------------------------------------------------
       # create table #{prefix}_html_zones (
     db SQL"""
-      create table #{prefix}_html_swapper_matches (
+      create table #{prefix}_html_fence_matches (
           dsk                 text    not null,
           oln                 integer not null,
           trk                 integer not null default 1,
@@ -147,7 +147,7 @@ class @Html
           start               integer not null,
           stop                integer not null,
           role                text    not null,
-          swapper             text    not null references #{prefix}_html_swappers ( name ),
+          fence               text    not null references #{prefix}_html_fences ( name ),
         foreign key ( dsk, oln, trk, pce ) references #{prefix}_raw_mirror );"""
     #-------------------------------------------------------------------------------------------------------
     db SQL"""
@@ -243,10 +243,10 @@ class @Html
     { prefix      }   = @cfg
     { db          }   = @mrg
     { insert_syntax
-      insert_swapper
+      insert_fence
       insert_tag  }   = @statements
     html_data         = require './data-html5-tags'
-    @_swapper_catalog = {}
+    @_fence_catalog   = {}
     #.......................................................................................................
     db =>
       try
@@ -262,18 +262,18 @@ class @Html
     #.......................................................................................................
     db =>
       try
-        for d in html_data.swappers
+        for d in html_data.fences
           { name
             environment
             syntax
             open
             close
             either }                = d
-          @_swapper_catalog[ name ] = { name, environment, syntax, open, close, either, }
+          @_fence_catalog[ name ]   = { name, environment, syntax, open, close, either, }
           open                      = open?.source    ? null
           close                     = close?.source   ? null
           either                    = either?.source  ? null
-          insert_swapper.run { name, environment, syntax, open, close, either, }
+          insert_fence.run { name, environment, syntax, open, close, either, }
       catch error
         throw new db.E.DBay_internal_error '^mirage-html@2^', \
           "when trying to insert #{rpr d}, an error occurred: #{error.message}"
@@ -293,7 +293,7 @@ class @Html
     ### TAINT caching this value means we must be careful with additions; use better solution ###
     ### TAINT unify methods ###
     @_syntax_catalog  = freeze @_get_syntax_catalog()
-    @_swapper_catalog = freeze @_swapper_catalog
+    @_fence_catalog   = freeze @_fence_catalog
     return null
 
   #---------------------------------------------------------------------------------------------------------
@@ -338,8 +338,8 @@ class @Html
       insert_atr:             db.prepare_insert { into: "#{prefix}_html_atrs",            returning: null, }
       insert_tag:             db.prepare_insert { into: "#{prefix}_html_tags",            returning: null, }
       insert_syntax:          db.prepare_insert { into: "#{prefix}_html_syntaxes",        returning: null, }
-      insert_swapper:         db.prepare_insert { into: "#{prefix}_html_swappers",        returning: null, }
-      insert_swapper_matches: db.prepare_insert { into: "#{prefix}_html_swapper_matches", returning: null, }
+      insert_fence:           db.prepare_insert { into: "#{prefix}_html_fences",          returning: null, }
+      insert_fence_matches:   db.prepare_insert { into: "#{prefix}_html_fence_matches",   returning: null, }
     #.......................................................................................................
     return null
 
@@ -365,7 +365,7 @@ class @Html
   parse_dsk: ( cfg ) ->
     validate.mrg_parse_dsk_cfg ( cfg = { @constructor.C.defaults.mrg_parse_dsk_cfg..., cfg..., } )
     { dsk }                 = cfg
-    @_collect_swapper_matches { dsk, }
+    @_collect_fence_matches { dsk, }
     #.......................................................................................................
     @mrg.db.with_transaction =>
       for { oln1, wslc, trk, pce, par, txt, } from @mrg.walk_par_rows { dsk, }
@@ -417,16 +417,16 @@ class @Html
   #---------------------------------------------------------------------------------------------------------
   _get_zone_candidates: ( text ) ->
     R = []
-    for swapper, d of @_swapper_catalog
+    for fence, d of @_fence_catalog
       { syntax
         open
         close
         either } = d
       if either?
-        R.push { swapper, syntax, role: 'either', hit..., } for hit from @_walk_pattern_matches text, either
+        R.push { fence, syntax, role: 'either', hit..., } for hit from @_walk_pattern_matches text, either
       else
-        R.push { swapper, syntax, role: 'open',   hit..., } for hit from @_walk_pattern_matches text, open
-        R.push { swapper, syntax, role: 'close',  hit..., } for hit from @_walk_pattern_matches text, close
+        R.push { fence, syntax, role: 'open',   hit..., } for hit from @_walk_pattern_matches text, open
+        R.push { fence, syntax, role: 'close',  hit..., } for hit from @_walk_pattern_matches text, close
     R.sort ( a, b ) ->
       return +1 if a.start > b.start
       return -1 if a.start < b.start
@@ -436,38 +436,38 @@ class @Html
     return R
 
   #---------------------------------------------------------------------------------------------------------
-  _collect_swapper_matches: ( cfg ) ->
+  _collect_fence_matches: ( cfg ) ->
     { dsk }           = cfg
     cache             = []
     ### TAINT should be a stack to allow for multiply nested syntaxes ###
-    current_swapper   = null
+    current_fence     = null
     for { oln, trk, pce, txt, } from @mrg.walk_line_rows { dsk, }
       for d in @_get_zone_candidates txt
         { role
-          swapper
+          fence
           start
           stop  } = d
-        swapper   = @_swapper_catalog[ swapper ]
-        if current_swapper?
+        fence     = @_fence_catalog[ fence ]
+        if current_fence?
           if ( role is 'either' )
-            if current_swapper is swapper.name
-              current_swapper = null
+            if current_fence is fence.name
+              current_fence = null
               role            = 'close'
             else
               continue
           else
-            continue unless ( swapper.name is current_swapper ) and ( role is 'close' )
-            current_swapper = null
+            continue unless ( fence.name is current_fence ) and ( role is 'close' )
+            current_fence = null
         else
           if ( role is 'either' )
-            current_swapper = swapper.name
+            current_fence   = fence.name
             role            = 'open'
           else
             continue unless ( role is 'open' )
-            current_swapper = swapper.name
-        cache.push { dsk, oln, trk, pce, start, stop, role, swapper: swapper.name, }
+            current_fence   = fence.name
+        cache.push { dsk, oln, trk, pce, start, stop, role, fence: fence.name, }
     #.......................................................................................................
-    @mrg.db @statements.insert_swapper_matches, row for row in cache
+    @mrg.db @statements.insert_fence_matches, row for row in cache
     cache.length = 0
     #.......................................................................................................
     return null
