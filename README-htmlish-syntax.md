@@ -57,7 +57,23 @@ Swappers are sign posts in the source text that delineate regions of different s
     Markdownish markup is recognized and characters like `<` and `&` do not have to be escaped or replaced
     by entities. Closed by `/<\/xmp>/g`.
 * in Markdownish,
-  * `/```/g` starts a so-called Fenced Code Block (FCB); closed by `/```/g`
+  * `/```/g` starts a so-called Fenced Code Block (FCB); closed by `/```/g`.
+
+The present implementation will scan the entire content of a source file line by line, noting which swappers
+were found on which lines, and record matches in a table (`mrg_swapper_matches`). This happens before the
+parsing of Markdownish and HTMLish syntax proper sets in, so those parsers can be instructed to skip over
+parts of the document that is of no concern to them. For example, consider the following snippet:
+
+```md
+
+This is an abso**lute**ly surprising formula:
+
+\`\`\`
+e**(i*π)=-1
+\`\`\`
+
+```
+When typeset in a place where Markdown is in effect, e**(i*π)=-1
 
 
 ## Mixing Markdownish and HTMLish
