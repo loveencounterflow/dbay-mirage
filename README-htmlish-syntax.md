@@ -73,6 +73,14 @@ This is an abso**lute**ly surprising formula:
 \`\`\`
 
 ```
+
+    This is an abso**lute**ly surprising formula:
+
+    ```
+    0=x**y**z
+    ```
+
+
 When typeset in a place where Markdown is in effect, 0=x**y**z
 
 
