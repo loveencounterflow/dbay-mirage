@@ -64,21 +64,13 @@ were found on which lines, and record matches in a table (`mrg_swapper_matches`)
 parsing of Markdownish and HTMLish syntax proper sets in, so those parsers can be instructed to skip over
 parts of the document that is of no concern to them. For example, consider the following snippet:
 
-```md
-
+~~~md
 This is an abso**lute**ly surprising formula:
 
-\`\`\`
-0=x**y**z
-\`\`\`
-
 ```
-
-    This is an abso**lute**ly surprising formula:
-
-    ```
-    0=x**y**z
-    ```
+0=x**y**z
+```
+~~~
 
 
 When typeset in a place where Markdown is in effect, 0=x**y**z
