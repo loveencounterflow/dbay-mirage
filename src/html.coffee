@@ -405,8 +405,9 @@ class @Html
           @_append_tag dsk, oln, col, trk, 'b', null, syntax, null, '\n'
     return null
 
+
   #=========================================================================================================
-  # ZONING
+  # SYNTAX FENCES
   #---------------------------------------------------------------------------------------------------------
   _walk_pattern_matches: ( text, pattern ) ->
     for match from text.matchAll pattern
