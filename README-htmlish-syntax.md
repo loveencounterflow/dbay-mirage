@@ -72,8 +72,9 @@ This is an abso**lute**ly surprising formula:
 ```
 ~~~
 
-
-When typeset in a place where Markdown is in effect, 0=x**y**z
+When typeset in a place where Markdown is in effect, the asterisks `*` in the formula `0=x**y**z` would be
+understood as markup for a `<strong>...</strong>` tag surrounding the `y`. But because they appear inside a
+region delineated by Fenced Code Block markup, the Markdownish parser will not parse them.
 
 
 ## Mixing Markdownish and HTMLish
