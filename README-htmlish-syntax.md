@@ -69,11 +69,11 @@ parts of the document that is of no concern to them. For example, consider the f
 This is an abso**lute**ly surprising formula:
 
 \`\`\`
-e**(i*π)=-1
+0=x**y**z
 \`\`\`
 
 ```
-When typeset in a place where Markdown is in effect, e**(i*π)=-1
+When typeset in a place where Markdown is in effect, 0=x**y**z
 
 
 ## Mixing Markdownish and HTMLish
