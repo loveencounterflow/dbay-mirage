@@ -9,7 +9,7 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [𓆤DBay 𓁛Mirage HTMLish Syntax](#%F0%93%86%A4dbay-%F0%93%81%9Bmirage-htmlish-syntax)
-  - [Swappers](#swappers)
+  - [Fences](#fences)
   - [Mixing Markdownish and HTMLish](#mixing-markdownish-and-htmlish)
   - [To Do](#to-do)
 
@@ -46,9 +46,9 @@
     equivalent)
   * any tag without content can be written in its short form, so e.g. `<div/>` is allowed (as is `<div//`)
 
-## Swappers
+## Fences
 
-Swappers are sign posts in the source text that delineate regions of different syntax.
+Fences are sign posts in the source text that delineate regions of different syntax.
 
 * in HTMLish,
   * `/<script\b/g` starts a script. Inside a script block, no tags or Markdownish syntax is recognized
@@ -59,8 +59,8 @@ Swappers are sign posts in the source text that delineate regions of different s
 * in Markdownish,
   * `/```/g` starts a so-called Fenced Code Block (FCB); closed by `/```/g`.
 
-The present implementation will scan the entire content of a source file line by line, noting which swappers
-were found on which lines, and record matches in a table (`mrg_swapper_matches`). This happens before the
+The present implementation will scan the entire content of a source file line by line, noting which fences
+were found on which lines, and record matches in a table (`mrg_fence_matches`). This happens before the
 parsing of Markdownish and HTMLish syntax proper sets in, so those parsers can be instructed to skip over
 parts of the document that is of no concern to them. For example, consider the following snippet:
 
@@ -78,7 +78,7 @@ region delineated by Fenced Code Block markup, the Markdownish parser will not p
 
 Limitations of the current implementation:
 
-* No nested swappers, which means that a region delineated by a pair of swappers cannot contain another
+* No nested fences, which means that a region delineated by a pair of fences cannot contain another
   syntax.
 
 
@@ -118,7 +118,7 @@ Limitations of the current implementation:
 * **[–]** make it a syntax error to use closing tags for tags that are empty by definition, so `<br>` is
   legal and means the same as `<br/>` and `<br//`, but `</br>` causes an error.
   * **[–]** distinguish between Empty Tags and tags that happen to have no content (zero content tags?)
-* **[–]** consider to rename 'swappers' to '(syntax) fences' (cf 'fenced code blocks')
+* **[+]** consider to rename 'swappers' to '(syntax) fences' (cf 'fenced code blocks')
 
 
 
