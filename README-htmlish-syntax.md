@@ -118,6 +118,7 @@ Limitations of the current implementation:
 * **[–]** make it a syntax error to use closing tags for tags that are empty by definition, so `<br>` is
   legal and means the same as `<br/>` and `<br//`, but `</br>` causes an error.
   * **[–]** distinguish between Empty Tags and tags that happen to have no content (zero content tags?)
+* **[–]** consider to rename 'swappers' to '(syntax) fences' (cf 'fenced code blocks')
 
 
 
