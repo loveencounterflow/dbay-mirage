@@ -147,8 +147,11 @@ class @Html
           start               integer not null,
           stop                integer not null,
           role                text    not null,
-          fence               text    not null references #{prefix}_html_fences ( name ),
-        foreign key ( dsk, oln, trk, pce ) references #{prefix}_raw_mirror );"""
+          fnr                 integer not null, -- fence nr in document, same for open, close
+          name                text    not null references #{prefix}_html_fences,
+        foreign key ( dsk, oln, trk, pce ) references #{prefix}_raw_mirror,
+        check ( fnr > 0 ), -- ### TAINT use mopre principled approach with `validate()`, `isa()`
+        check ( role in ( 'open', 'close' ) ) );"""
     #-------------------------------------------------------------------------------------------------------
     db SQL"""
       create table #{prefix}_html_tags (
@@ -465,7 +468,8 @@ class @Html
           else
             continue unless ( role is 'open' )
             current_fence   = fence.name
-        cache.push { dsk, oln, trk, pce, start, stop, role, fence: fence.name, }
+        fnr = Math.ceil ( cache.length + 1 ) / 2
+        cache.push { dsk, oln, trk, pce, start, stop, role, fnr, name: fence.name, }
     #.......................................................................................................
     @mrg.db @statements.insert_fence_matches, row for row in cache
     cache.length = 0
