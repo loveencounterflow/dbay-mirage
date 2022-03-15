@@ -436,23 +436,16 @@ class @Html
 
   #---------------------------------------------------------------------------------------------------------
   _collect_swapper_matches: ( cfg ) ->
-    # debug '^530^', d, @_syntax_catalog
-    # debug '^530^', d, @_swapper_catalog
     { dsk }           = cfg
     cache             = []
     ### TAINT should be a stack to allow for multiply nested syntaxes ###
     current_swapper   = null
-    # state             = {}
-    # state[ swapper ]  = false for swapper of @_swapper_catalog
     for { oln, trk, pce, txt, } from @mrg.walk_line_rows { dsk, }
         for d in @_get_zone_candidates txt
-          # swapper = @_swapper_catalog[ d.swapper ]
-          # syntax  = @_syntax_catalog[ swapper.syntax ]
           { role
             swapper
             start
             stop  } = d
-          # debug '^530^', { dsk, oln, trk, pce, start, stop, swapper, }
           swapper   = @_swapper_catalog[ swapper ]
           if current_swapper?
             if role is 'either'
