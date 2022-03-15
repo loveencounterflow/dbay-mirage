@@ -445,7 +445,6 @@ class @Html
     # state             = {}
     # state[ swapper ]  = false for swapper of @_swapper_catalog
     for { oln, trk, pce, txt, } from @mrg.walk_line_rows { dsk, }
-        whisper '^530^', { oln, trk, pce, txt, }, rpr txt
         for d in @_get_zone_candidates txt
           # swapper = @_swapper_catalog[ d.swapper ]
           # syntax  = @_syntax_catalog[ swapper.syntax ]
@@ -472,7 +471,6 @@ class @Html
             else
               continue unless ( role is 'open' )
               current_swapper = swapper.name
-          urge '^324^', swapper
           cache.push { dsk, oln, trk, pce, start, stop, role, swapper: swapper.name, }
     #.......................................................................................................
     @mrg.db @statements.insert_swapper_matches, row for row in cache

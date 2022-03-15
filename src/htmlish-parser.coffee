@@ -311,9 +311,6 @@ class @Htmlish
       send e
     return null
 
-    { text
-      reveal  }   = @_tunnel text
-
   #---------------------------------------------------------------------------------------------------------
   parse: ( text, tag_catalog = null ) ->
     ### TAINT use `cfg` pattern ###
@@ -325,7 +322,7 @@ class @Htmlish
     mr.push [ text, ]
     mr.push @$tunnel                        tunnel_wrap
     mr.push @$transpile_markdownish()
-    mr.push ( text ) -> urge '^394^', rpr text
+    # mr.push ( text ) -> urge '^394^', rpr text
     mr.push @$parse_htmlish()
     mr.push @$add_location()
     mr.push @$set_syntax_on_otag            tag_catalog if tag_catalog?
