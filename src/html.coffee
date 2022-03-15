@@ -449,7 +449,7 @@ class @Html
           stop  } = d
         swapper   = @_swapper_catalog[ swapper ]
         if current_swapper?
-          if role is 'either'
+          if ( role is 'either' )
             if current_swapper is swapper.name
               current_swapper = null
               role            = 'close'
@@ -459,7 +459,7 @@ class @Html
             continue unless ( swapper.name is current_swapper ) and ( role is 'close' )
             current_swapper = null
         else
-          if role is 'either'
+          if ( role is 'either' )
             current_swapper = swapper.name
             role            = 'open'
           else
