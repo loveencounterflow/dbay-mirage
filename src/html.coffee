@@ -442,30 +442,30 @@ class @Html
     ### TAINT should be a stack to allow for multiply nested syntaxes ###
     current_swapper   = null
     for { oln, trk, pce, txt, } from @mrg.walk_line_rows { dsk, }
-        for d in @_get_zone_candidates txt
-          { role
-            swapper
-            start
-            stop  } = d
-          swapper   = @_swapper_catalog[ swapper ]
-          if current_swapper?
-            if role is 'either'
-              if current_swapper is swapper.name
-                current_swapper = null
-                role            = 'close'
-              else
-                continue
-            else
-              continue unless ( swapper.name is current_swapper ) and ( role is 'close' )
+      for d in @_get_zone_candidates txt
+        { role
+          swapper
+          start
+          stop  } = d
+        swapper   = @_swapper_catalog[ swapper ]
+        if current_swapper?
+          if role is 'either'
+            if current_swapper is swapper.name
               current_swapper = null
-          else
-            if role is 'either'
-              current_swapper = swapper.name
-              role            = 'open'
+              role            = 'close'
             else
-              continue unless ( role is 'open' )
-              current_swapper = swapper.name
-          cache.push { dsk, oln, trk, pce, start, stop, role, swapper: swapper.name, }
+              continue
+          else
+            continue unless ( swapper.name is current_swapper ) and ( role is 'close' )
+            current_swapper = null
+        else
+          if role is 'either'
+            current_swapper = swapper.name
+            role            = 'open'
+          else
+            continue unless ( role is 'open' )
+            current_swapper = swapper.name
+        cache.push { dsk, oln, trk, pce, start, stop, role, swapper: swapper.name, }
     #.......................................................................................................
     @mrg.db @statements.insert_swapper_matches, row for row in cache
     cache.length = 0
