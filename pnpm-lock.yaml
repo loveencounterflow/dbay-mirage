@@ -8,7 +8,7 @@ specifiers:
   intertext: ^8.0.0
   intertype: ^7.7.0
   markdown-it: ^12.3.2
-  moonriver: 1.0.2
+  moonriver: 1.1.1
   paragate: 4.0.0
   timetunnel: 2.0.0
 
@@ -19,7 +19,7 @@ dependencies:
   intertext: 8.0.0
   intertype: 7.7.0
   markdown-it: 12.3.2
-  moonriver: 1.0.2
+  moonriver: 1.1.1
   paragate: 4.0.0
   timetunnel: 2.0.0
 
@@ -252,8 +252,8 @@ packages:
     resolution: {integrity: sha1-/oWy7HWlkDfyrf7BAP1sYBdhFS4=}
     dev: false
 
-  /moonriver/1.0.2:
-    resolution: {integrity: sha512-3w39D2LEgyPVd0xe0hj1lB0CfigxrvSeZ9yEXAwR6M3SkraFdONdpgxxKXMSbzephrLxGkl4xgTPaoLPyyDh4w==}
+  /moonriver/1.1.1:
+    resolution: {integrity: sha512-ym4zurKT/E1bKU/+TaAjWQJkKzCXMBjtDalvhQby/xQ5IEOCfpZeEKCJf38tZwyuTVFu4NCxT5vjkWNYM7r0PA==}
     dependencies:
       cnd: 9.2.2
       guy: 4.1.1
