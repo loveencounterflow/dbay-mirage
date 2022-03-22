@@ -124,7 +124,7 @@ class @Htmlish
     md.enable 'emphasis'
     # md.enable 'autolink'
     md.enable 'backticks'
-    # md.enable 'entity'
+    md.disable 'entity'
     # md.enable 'escape'
     # md.enable 'html_inline'
     # md.enable 'image'
@@ -134,7 +134,12 @@ class @Htmlish
     # md.enable 'balance_pairs'
     # md.enable 'text_collapse'
     md.disable 'smartquotes'
-    return ( text, send ) => send md.renderInline text
+    return ( text, send ) =>
+      text  = md.renderInline text
+      ### TAINT didn't find a way to keep markdown-it from escaping `<`, `&`; as a hotfix, undo these: ###
+      text  = text.replace /&lt;/g,   '<'
+      text  = text.replace /&amp;/g,  '&'
+      send text
 
   #---------------------------------------------------------------------------------------------------------
   $parse_htmlish: -> ( text, send ) => send d for d in thaw _HTMLISH.parse text
@@ -322,7 +327,7 @@ class @Htmlish
     mr.push [ text, ]
     mr.push @$tunnel                        tunnel_wrap
     mr.push @$transpile_markdownish()
-    # mr.push ( text ) -> urge '^394^', rpr text
+    # mr.push ( text ) -> info '^394^', rpr text
     mr.push @$parse_htmlish()
     mr.push @$add_location()
     mr.push @$set_syntax_on_otag            tag_catalog if tag_catalog?
@@ -334,7 +339,6 @@ class @Htmlish
     mr.push @$remove_backslashes()
     mr.push @$treat_xws_in_opening_tags()
     mr.push @$treat_xws_in_closing_tags()
-    # mr.push ( d ) -> urge '^432^', d.$key[ 0 ] + d.name if d.name?
     mr.push @$validate_paired_tags()
     mr.push @$relabel_rawtexts()
     # mr.push @$consolidate_texts()
