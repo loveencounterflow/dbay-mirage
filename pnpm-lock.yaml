@@ -2,9 +2,9 @@ lockfileVersion: 5.3
 
 specifiers:
   cnd: ^9.2.2
-  dbay: 14.2.0
-  guy: 4.1.1
-  hdml: ^1.0.2
+  dbay: 14.8.0
+  guy: 4.2.0
+  hdml: 3.0.0
   intertext: ^8.0.0
   intertype: ^7.7.0
   markdown-it: ^12.3.2
@@ -14,8 +14,8 @@ specifiers:
 
 dependencies:
   cnd: 9.2.2
-  guy: 4.1.1
-  hdml: 1.0.2
+  guy: 4.2.0
+  hdml: 3.0.0
   intertext: 8.0.0
   intertype: 7.7.0
   markdown-it: 12.3.2
@@ -24,7 +24,7 @@ dependencies:
   timetunnel: 2.0.0
 
 devDependencies:
-  dbay: 14.2.0
+  dbay: 14.8.0
 
 packages:
 
@@ -100,11 +100,16 @@ packages:
       multimix: 5.0.0
     dev: false
 
-  /dbay/14.2.0:
-    resolution: {integrity: sha512-7zSpuBMDvzjeaFDgSpG0Vq0GpFkxFhPwWcNfm6+gsPlpPPqboFf3VqH/u5AHMDcsjr4pc1oBfkzU1bmXUqr8Ag==}
+  /dayjs/1.11.2:
+    resolution: {integrity: sha512-F4LXf1OeU9hrSYRPTTj/6FbO4HTjPKXvEIC1P2kcnFurViINCVk3ZV0xAS3XVx9MkMsXbbqlK6hjseaYbgKEHw==}
+    dev: true
+
+  /dbay/14.8.0:
+    resolution: {integrity: sha512-t6h7oSiWdsZyRAu1xqAeiJqTageiSBPZytpZtmhB8IfnC2pB1TeOyAgCK7Ke+qhuDkL/TF1UxSSPlECAdypjIQ==}
     requiresBuild: true
     dependencies:
       cnd: 9.2.2
+      dayjs: 1.11.2
       exit-hook: 2.2.1
       guy: 4.0.0
       intertype: 7.7.0
@@ -132,16 +137,6 @@ packages:
     engines: {node: '>=6'}
     dev: true
 
-  /guy/3.1.0:
-    resolution: {integrity: sha512-5bxlACi0FcjbF/hqDOs0nMyfPLQxzF9so8XJiTDv4g5xuWGOWMs7m/f2wIrstN6JsNlUJiGfxniHX9XoSfaZgg==}
-    peerDependencies:
-      deasync: ^0.1.22
-    dependencies:
-      cnd: 9.2.2
-      intertype: 7.6.7
-      letsfreezethat: 3.1.0
-    dev: false
-
   /guy/4.0.0:
     resolution: {integrity: sha512-unob1iMEmXrotWQYMeW/uOAJS4DXv0C5njlE1JboIwsc9wwd3goXN4ICdGxFw1x61WGyRH4lNWTRltj5o5xfBA==}
     dependencies:
@@ -160,14 +155,20 @@ packages:
       letsfreezethat: 3.1.0
     dev: false
 
-  /hdml/1.0.2:
-    resolution: {integrity: sha512-hI5aUOv48mLV23Oh4WfsyMTC3U2PUAGuBza8SjuUeDyadneTByR/f9IYArGLjY1fMKoAyTtE3NnEvN9MpvD5gw==}
+  /guy/4.2.0:
+    resolution: {integrity: sha512-ppWljP+64o2qH0K1ia3Px9dBPftO4ILN23J9hLHQH+AcGfoBjGd2HDQGAc8rOx3RIyBiwObt8bFJiu0zXPtXmw==}
     dependencies:
       cnd: 9.2.2
-      guy: 3.1.0
+      intertype: 7.6.7
+      letsfreezethat: 3.1.0
+    dev: false
+
+  /hdml/3.0.0:
+    resolution: {integrity: sha512-iZsStj6mOEzO8Z7oJ5GVn6zUdtCUuZkrtsWgiMf4esKfBS/+UaVrRQv2gK60zasl4csgadweWHS8iOJBaqp7IQ==}
+    dependencies:
+      cnd: 9.2.2
+      guy: 4.2.0
       intertype: 7.7.0
-    transitivePeerDependencies:
-      - deasync
     dev: false
 
   /hyphenopoly/4.12.0:
