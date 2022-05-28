@@ -136,8 +136,10 @@ class @Htmlish
     md.disable 'smartquotes'
     return ( text, send ) =>
       text  = md.renderInline text
-      ### TAINT didn't find a way to keep markdown-it from escaping `<`, `&`; as a hotfix, undo these: ###
+      ### TAINT didn't find a way to keep markdown-it from escaping `<`, `>`, `&`; as a hotfix, undo these ###
+      ### TAINT this can't be correct since now what the user intended to be escaped and hidden will now be revealed ###
       text  = text.replace /&lt;/g,   '<'
+      text  = text.replace /&gt;/g,   '>'
       text  = text.replace /&amp;/g,  '&'
       send text
 
@@ -327,6 +329,7 @@ class @Htmlish
     mr.push [ text, ]
     mr.push @$tunnel                        tunnel_wrap
     mr.push @$transpile_markdownish()
+    # mr.push ( d ) -> debug '^5569^', d
     # mr.push ( text ) -> info '^394^', rpr text
     mr.push @$parse_htmlish()
     mr.push @$add_location()
