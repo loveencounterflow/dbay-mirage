@@ -27,6 +27,11 @@ _HTMLISH                  = ( require 'paragate/lib/htmlish.grammar' ).new_gramm
 TIMETUNNEL                = require 'timetunnel'
 { Moonriver }             = require 'moonriver'
 { $ }                     = Moonriver
+{ HDML }                  = require 'hdml'
+_html_data                = require './data-html5-tags'
+html_tags                 = {}
+do =>
+  html_tags[ d.tag ] = d for d in _html_data.tags
 
 
 #===========================================================================================================
@@ -308,6 +313,7 @@ class @Htmlish
         flush()
         return send d
       collector.push d
+      return null
 
   #---------------------------------------------------------------------------------------------------------
   $split_lines: -> ( d, send ) =>
@@ -324,6 +330,81 @@ class @Htmlish
     return null
 
   #---------------------------------------------------------------------------------------------------------
+  $normalize_html: -> ( d, send ) =>
+    unless d.$key is '^text'
+      switch d.type
+        when 'otag'
+          d.type  = 'open'
+          # d.text  = H
+        when 'ctag'
+          d.type = 'close'
+        when 'ntag'
+          # d.text  = HDML.open d.name, d.atrs
+          d.type  = 'open'
+        when 'nctag'
+          # d.text  = HDML.close d.name
+          d.type  = 'close'
+        when 'stag'
+          d.type  = 'open'
+          # d.text  = HDML.open d.name, d.atrs
+          send d
+          e       = { d..., }
+          delete e.atrs
+          e.type  = 'close'
+          # e.text  = HDML.close d.name
+          send e
+          return null
+        else d.message = 'XXX'
+    send d
+
+  #---------------------------------------------------------------------------------------------------------
+  $normalize_atrs: -> ( d, send ) =>
+    return send d unless d.type is 'open'
+    atrs        = {}
+    atrs.id     = d.id              if d.id?
+    atrs.class  = d.class.join ' '  if d.class?
+    Object.assign atrs, d.atrs
+    d.atrs      = atrs
+    send d
+
+  #---------------------------------------------------------------------------------------------------------
+  $normalize_token_keys: ->
+    keys = [
+      '$vnr'
+      '$key'
+      'type'
+      'prefix'
+      'name'
+      'id'
+      'class'
+      'atrs'
+      'start'
+      'stop'
+      'text'
+      'otext'
+      # '$'
+      'code'      ### { $key: '^error', } ###
+      # 'chvtname'  ### { $key: '^error', } ###
+      # 'origin'    ### { $key: '^error', } ###
+      'message'   ### { $key: '^error', } ###
+      ]
+    return ( d, send ) =>
+      R         = {}
+      R[ key ]  = ( d[ key ] ? null ) for key in keys
+      send R
+      return null
+
+  #---------------------------------------------------------------------------------------------------------
+  $normalize_tag_texts: -> ( d, send ) =>
+    switch d.type
+      when null then null
+      when 'open'
+        d.text = HDML.open d.name, d.atrs
+      when 'close'
+        d.text = HDML.close  d.name, d.atrs
+    send d
+
+  #---------------------------------------------------------------------------------------------------------
   parse: ( text, tag_catalog = null ) ->
     ### TAINT use `cfg` pattern ###
     ### TAINT do not reconstruct pipeline on each run ###
@@ -334,9 +415,9 @@ class @Htmlish
     mr.push [ text, ]
     mr.push @$tunnel                        tunnel_wrap
     mr.push @$transpile_markdownish()
-    # mr.push ( d ) -> debug '^5569^', d
     # mr.push ( text ) -> info '^394^', rpr text
     mr.push @$parse_htmlish()
+    # mr.push ( d ) -> debug '^5569^', d
     mr.push @$add_location()
     mr.push @$add_otext()
     mr.push @$set_syntax_on_otag            tag_catalog if tag_catalog?
@@ -350,6 +431,10 @@ class @Htmlish
     mr.push @$treat_xws_in_closing_tags()
     mr.push @$validate_paired_tags()
     mr.push @$relabel_rawtexts()
+    mr.push @$normalize_html()
+    mr.push @$normalize_atrs()
+    mr.push @$normalize_token_keys()
+    mr.push @$normalize_tag_texts()
     # mr.push @$consolidate_texts()
     # mr.push @$split_lines()
     mr.push ( d ) -> R.push d
