@@ -155,6 +155,11 @@ class @Htmlish
     send d
 
   #---------------------------------------------------------------------------------------------------------
+  $add_otext: -> ( d, send ) =>
+    d.otext = d.text
+    send d
+
+  #---------------------------------------------------------------------------------------------------------
   $set_syntax_on_otag: ( tag_catalog ) -> ( d, send ) =>
     return send d unless ( d.$key is '<tag' )
     d.syntax = tag_catalog[ d.name ]?.syntax ? 'html'
@@ -333,6 +338,7 @@ class @Htmlish
     # mr.push ( text ) -> info '^394^', rpr text
     mr.push @$parse_htmlish()
     mr.push @$add_location()
+    mr.push @$add_otext()
     mr.push @$set_syntax_on_otag            tag_catalog if tag_catalog?
     mr.push @$convert_nonhtml_syntax()                  if tag_catalog?
     mr.push @$set_syntax_on_other_tokens    tag_catalog if tag_catalog?
