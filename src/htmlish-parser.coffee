@@ -247,6 +247,7 @@ class @Htmlish
   $treat_xws_in_opening_tags: -> ( d, send ) =>
     return send d unless ( d.$key is '<tag' )
     if ( d.type in [ 'otag', 'ntag', ] ) and ( /^<\s+/.test d.text )
+      d.name ?= 'WHITESPACE'
       @_as_error d, '^ð1^', 'xtraows', "extraneous whitespace before tag name"
     send d
 
@@ -254,6 +255,7 @@ class @Htmlish
   $treat_xws_in_closing_tags: -> ( d, send ) =>
     return send d unless ( d.$key is '>tag' )
     if ( d.type is 'ctag' ) and ( ( /^<\s*\/\s+/.test d.text ) or ( /^<\s+\/\s*/.test d.text ) )
+      d.name ?= 'WHITESPACE'
       @_as_error d, '^ð2^', 'xtracws', "extraneous whitespace in closing tag"
     send d
 
