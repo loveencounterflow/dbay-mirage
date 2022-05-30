@@ -373,15 +373,14 @@ class @Html
     @mrg.db.with_transaction =>
       for { oln1, wslc, trk, pce, par, txt, } from @mrg.walk_par_rows { dsk, }
         # debug '^598^', dsk, oln1, par, rpr txt
-        debug '^234786^', { oln1, wslc, trk, pce, par, txt, }
         tokens  = @HTMLISH.parse txt, @_get_tag_catalog()
         oln     = null
         col     = null
         syntax  = null
         #...................................................................................................
         for d in tokens
-          oln     = oln1 + d.delta_lnr ? 0
-          col     = d.col
+          oln     = oln1 + ( d.delta_lnr ? 0 )
+          col     = d.col ? 0
           syntax  = d.syntax ? 'html'
           switch d.$key
             when '<tag'     then @_append_tag dsk, oln, col, trk, '<', d.name, syntax, d.atrs
