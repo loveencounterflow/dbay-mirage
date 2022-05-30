@@ -334,29 +334,30 @@ class @Htmlish
   #---------------------------------------------------------------------------------------------------------
   $normalize_html: -> ( d, send ) =>
     return send d if ( not d.type? ) or ( d.$key in [ '^text', '^entity', '^error' ] )
-      switch d.type
-        when 'otag'
-          d.type  = 'open'
-          # d.text  = H
-        when 'ctag'
-          d.type = 'close'
-        when 'ntag'
-          # d.text  = HDML.open d.name, d.atrs
-          d.type  = 'open'
-        when 'nctag'
-          # d.text  = HDML.close d.name
-          d.type  = 'close'
-        when 'stag'
-          d.type  = 'open'
-          # d.text  = HDML.open d.name, d.atrs
-          send d
-          e       = { d..., }
-          delete e.atrs
-          e.type  = 'close'
-          # e.text  = HDML.close d.name
-          send e
-          return null
-        else d.message = 'XXX'
+    switch d.type
+      when 'otag'
+        d.type  = 'open'
+        # d.text  = H
+      when 'ctag'
+        d.type = 'close'
+      when 'ntag'
+        # d.text  = HDML.open d.name, d.atrs
+        d.type  = 'open'
+      when 'nctag'
+        # d.text  = HDML.close d.name
+        d.type  = 'close'
+      when 'stag'
+        d.type  = 'open'
+        # d.text  = HDML.open d.name, d.atrs
+        send d
+        e       = { d..., }
+        delete e.atrs
+        e.type  = 'close'
+        # e.text  = HDML.close d.name
+        send e
+        return null
+      else
+        d.message = "unhandled d.type: #{rpr d.type} (#{rpr d})"
     send d
 
   #---------------------------------------------------------------------------------------------------------
@@ -419,7 +420,6 @@ class @Htmlish
     mr.push @$transpile_markdownish()
     # mr.push ( text ) -> info '^394^', rpr text
     mr.push @$parse_htmlish()
-    # mr.push ( d ) -> debug '^5569^', d
     mr.push @$add_location()
     mr.push @$add_otext()
     mr.push @$set_syntax_on_otag            tag_catalog if tag_catalog?
@@ -430,6 +430,7 @@ class @Htmlish
     mr.push @$reveal_tunneled_text          tunnel_wrap
     mr.push @$remove_backslashes()
     mr.push @$treat_xws_in_opening_tags()
+    # mr.push ( d ) -> debug '^5569-1^', d.name ? '##############', d if d.$key is '<tag'
     mr.push @$treat_xws_in_closing_tags()
     mr.push @$validate_paired_tags()
     mr.push @$relabel_rawtexts()
