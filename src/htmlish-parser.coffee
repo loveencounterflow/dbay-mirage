@@ -246,7 +246,7 @@ class @Htmlish
   #---------------------------------------------------------------------------------------------------------
   $treat_xws_in_opening_tags: -> ( d, send ) =>
     return send d unless ( d.$key is '<tag' )
-    if ( d.type is 'otag' ) and ( /^<\s+/.test d.text )
+    if ( d.type in [ 'otag', 'ntag', ] ) and ( /^<\s+/.test d.text )
       @_as_error d, '^ð1^', 'xtraows', "extraneous whitespace before tag name"
     send d
 
@@ -331,7 +331,7 @@ class @Htmlish
 
   #---------------------------------------------------------------------------------------------------------
   $normalize_html: -> ( d, send ) =>
-    unless d.$key is '^text'
+    return send d if ( not d.type? ) or ( d.$key in [ '^text', '^entity', '^error' ] )
       switch d.type
         when 'otag'
           d.type  = 'open'
